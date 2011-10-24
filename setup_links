@@ -1,0 +1,26 @@
+#!/usr/bin/python
+import sys
+import os
+
+symlinks=[
+    (".emacs.d", "rc/dot.emacs.d"),
+    ("bin", "bin")]
+
+if __name__ == "__main__":
+    gitbase=os.path.dirname(os.path.abspath(sys.argv[0]))
+    if not os.path.isdir(os.path.join(gitbase,".git")):
+	    print >>stderr, "Hmmm... %s is not a git repo."
+            sys.exit(1)
+
+    home=os.getenv("HOME")
+    for (dst, src) in symlinks:
+        fulldst=os.path.join(home,dst)
+        fullsrc=os.path.join(gitbase,src)
+        if os.path.islink(fulldst):
+            print "%s already a link" % fulldst
+            continue
+        if os.path.exists(fulldst):
+            print "%s exists, skipping" % fulldst
+            continue
+        print "linking %s -> %s" % (fullsrc, fulldst)
+        os.symlink(fullsrc, fulldst)
