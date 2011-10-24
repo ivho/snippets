@@ -1,0 +1,104 @@
+#!/usr/bin/python
+
+import os
+import sys
+import hashlib
+import exif
+
+import db
+
+class DbObj(object):
+    def __init__(self):
+        print "DBINIT"
+        self.__id = None
+        
+    def setId(self, id):
+        self.__id = id
+
+    def getId(self):
+        return self.__id    
+
+class MyDir(DbObj):
+    def __init__(self, dirname):
+        DbObj.__init__(self)
+        print "mydir init"
+        self.dirname = dirname
+    def kalle(self):
+        print "tjoho"
+
+md=MyDir("kalle")
+#md.setId(32)
+print md.dirname, " id:", md.getId()
+
+class File(object):
+    def __init__(self, dn, fn):
+        self.dname = dn
+        self.fname = fn
+        f=file("%s/%s" % (dn,fn))
+        f.seek(1024)
+        self.md5sum = hashlib.md5(f.read(64)).digest()
+        self.exif = exif.parse(fn)
+
+    def __str__(self):
+        p=""
+        for x in self.md5sum:
+            p += ":"+("%02x" % ord(x))
+#        p=p[1:]
+#        print self.exif["DateTime"]
+        return p[1:]        
+
+class Dir(object):
+    def __init__(self, dirname, disk):
+        self.dirname = dirname
+        self.disk = disk
+
+class Disk(object):
+    def __init__(self, mountpath, desc):
+        self.desc = desc
+        self.__id = None
+
+    def setId(self, id):
+        """Set database id of this disk"""
+        self.__id = id
+
+        
+def isjpeg(fn):
+    f,e=os.path.splitext(fn)
+    return e == ".jpg"
+
+db=db.PhotoDb("test2")
+
+ndirs=0
+nfiles=0
+njpegs=0
+def find_mount(path):
+    tmp=os.path.abspath(path)
+    org=tmp
+    while not os.path.ismount(tmp):
+        tmp=os.path.dirname(tmp)
+    return tmp
+
+initmount=find_mount(sys.argv[1])
+curdisk=Disk(initmount, "dummy descript")
+db.addDisk(curdisk)
+
+for root,dirs,files in os.walk(sys.argv[1]):
+    dirmd5=""
+    ndirs+=1
+    if os.path.ismount(root):
+        print "mount point", root
+        curdisk=db.addDisk(root)
+
+    for f in files:
+        nfiles+=1
+        if isjpeg(f):
+            njpegs+=1
+            fo=File(root, f);
+            db.addPhoto(fo)
+            dirmd5 += fo.__str__()
+    if dirmd5:
+        None
+#        dirs.add(
+print "dirs:", ndirs
+print "jpegs:", njpegs
+print "files:", nfiles
