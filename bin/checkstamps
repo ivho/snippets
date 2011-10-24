@@ -1,0 +1,15 @@
+#!/usr/bin/python
+import sys
+a = sys.stdin.readlines()
+f=map(float,a)
+#print f
+s = f[0]
+nsamps = 0x800/2
+freq=44100.0
+slen=1/freq
+for x in xrange(len(f)-1):
+    expt=x*slen*nsamps
+    t=f[x+1]-f[x]
+    cf=nsamps/t
+#    print "%f %f (%f) %fHz " % ((f[x] - s), expt, (f[x] - s) - expt, cf)
+    print "%f %f " % (f[x], f[x+1]-f[x])

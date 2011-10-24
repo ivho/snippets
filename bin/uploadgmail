@@ -1,0 +1,20 @@
+#!/usr/bin/python
+import imaplib
+import time
+import sys
+
+def list_emails():
+    imap = imaplib.IMAP4_SSL("imap.gmail.com", 993)
+
+    print "Logging in"
+    imap.login("ivarholmqvist", "1uniagat")
+
+    print "Adding message"
+    msgdata = sys.stdin.read();
+    imap.append("INBOX", None, None, msgdata);
+
+    print "Logout"
+    imap.logout()
+    
+
+list_emails()

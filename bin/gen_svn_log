@@ -1,0 +1,8 @@
+#!/bin/bash
+
+LOG=$1
+if [ -z $1 ]; then
+    LOG=/tmp/log_2011.xml
+    echo "default filename $LOG"
+fi     
+svn log --xml -r '{2011-01-01}':HEAD http://ala-svn.wrs.com/svn/Simics/simics/branches/4.4 > $LOG

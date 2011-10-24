@@ -1,0 +1,3 @@
+#!/bin/sh
+d=$(date +'week:%V date:%d-%m-%Y time:%H:%M extra:%b')
+echo $d = $*
