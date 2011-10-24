@@ -4,7 +4,9 @@ import os
 
 symlinks=[
     (".emacs.d", "rc/dot.emacs.d"),
+    (".bashrc", "rc/dot.bashrc"),
     ("bin", "bin")]
+
 
 if __name__ == "__main__":
     gitbase=os.path.dirname(os.path.abspath(sys.argv[0]))

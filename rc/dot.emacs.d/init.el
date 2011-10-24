@@ -32,9 +32,10 @@
   (setq indent-tabs-mode t)
   (setq c-basic-offset 4))
 
-(add-to-list 'load-path "/usr/share/doc/git-core/contrib/emacs/")
-(require 'git)
-(require 'git-blame)
+;;(add-to-list 'load-path "/usr/share/doc/git-core/contrib/emacs/")
+
+;;(require 'git)
+;;(require 'git-blame)
 ;;(load-library 'magit)
 ;;(load-file "/home/ivho/simics42/simics-model-builder-4.2.21/scripts/dml-mode.el")
 ;;(require 'ipython)
@@ -45,7 +46,8 @@
 (global-set-key [(meta return)] 'goto-line)
 
 ;;DML stuff
-(load-file "/space/work/simics/ivho/simics-4.4/simics-model-builder-4.4.12/scripts/dml-mode.el")
+
+(load-file "~/.emacs.d/dml/dml-mode.el")
 (add-hook 'dml-mode-hook
   (function (lambda ()
               (setq indent-tabs-mode nil)
