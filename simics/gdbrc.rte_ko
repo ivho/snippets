@@ -1,0 +1,21 @@
+#workspace/modules/ACP3400-devices/
+target remote localhost:9123
+#symbol-file ../install/hw/linux-2.6.35/vmlinux
+
+#(gdb) print *((struct module *)(((char *)modules->next)-4))
+#(gdb) print *((struct module *)(((char *)modules->next)-4))
+
+#print ((struct module *)(((char *)modules->next)-4))->name
+#print  ((struct module *)(((char *)modules->next)-4))->sect_attrs.attrs[1].name
+#print  /x ((struct module *)(((char *)modules->next)-4))->sect_attrs.attrs[1].address
+#set $text_addr = ((struct module *)(((char *)modules->next)-4))->sect_attrs.attrs[1].address
+#set $text_addr = 0xd1658000
+#set $text_addr = 0xd1618000
+#set $text_addr = 0xd161a000
+#set $text_addr = 0xd1606000
+set $text_addr = 0xd1607000
+#set $text_addr = 0xd160b000
+
+#                 0xd1607000
+#add-symbol-file /space/work/simics/axxia/install/ncp_pristine/ncp_rte/src/api/nca/linux_kernel/plb/ncp.ko  $text_addr
+add-symbol-file /space/work/simics/ivho/target-src/acp3400/mini_install/ncp.ko  $text_addr

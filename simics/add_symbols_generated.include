@@ -1,0 +1,6 @@
+echo "echo generated from run_all2 script"
+ncpCfgTool.load-symbols file =  /space/work/simics/axxia/install/ncp_pristine/ncp_rte/lib/libNcpApi.so (0x0f825000)
+ncpCfgTool.load-symbols file =  /space/work/simics/axxia/install/ncp_pristine/ncp_rte/lib/libNcpCliCommon.so (0x0f7fe000)
+ncpCfgTool.load-symbols file =  /space/work/simics/axxia/install/ncp_pristine/ncp_rte/lib/librtecommon.so (0x0f7c1000)
+ncpCfgTool.load-symbols file =  /space/work/simics/axxia/install/ncp_pristine/ncp_rte/lib/libNcpSalIf.so (0x0f798000)
+ncpCfgTool.load-symbols file =  /space/work/simics/axxia/install/ncp_pristine/ncp_rte/lib/libXyssl.so (0x0f600000)
