@@ -26,7 +26,7 @@ def get_addr(symt, var):
 
 class bp_handler(object):
     def __init__(self, tracker, symbols):
-        self.sub_call_in_progess = False        
+        self.sub_call_in_progess = False
         self.tracker = tracker
         self.symbols = symbols
         self.c_callback_addr=symbols["callback"]
