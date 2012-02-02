@@ -16,6 +16,6 @@ for x in $* ; do
     echo "===="
     echo ssh $DST  "mkdir -p $DST_DIR/$x"
     $DRY ssh $DST  "mkdir -p $DST_DIR/$x"   
-    echo rsync -av $x $DST@:DST_DIR
-    $DRY rsync -av $x $DST@:DST_DIR
+    echo rsync -av $x $DST:DST_DIR
+    $DRY rsync -av $x $DST:DST_DIR
 done
