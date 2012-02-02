@@ -1,0 +1,14 @@
+#!/bin/sh
+
+rm -rf ../dst
+DST=$1
+shift
+DST_DIR=$1
+shift
+DRY=echo
+echo DST=$DST
+for x in $* ; do
+    echo "===="
+    $DRY ssh $DST  "mkdir -p $DST_DIR/$x"
+    $DRY rsync -av $x $DST@$DST_DIR
+done
