@@ -5,7 +5,7 @@ DST=$1
 shift
 DST_DIR=$1
 shift
-DRY=echo
+#DRY=echo
 echo DST=$DST
 if [ -z $1 ] ; then
     echo "usage: $0 dst dst-dir src_dir[...]"
@@ -14,6 +14,8 @@ fi
 
 for x in $* ; do
     echo "===="
-    $DRY ssh $DST  "mkdir -p $DST_DIR/$x"
+    echo ssh $DST  "mkdir -p $DST_DIR/$x"
+    $DRY ssh $DST  "mkdir -p $DST_DIR/$x"   
+    echo rsync -av $x $DST@$DST_DIR
     $DRY rsync -av $x $DST@$DST_DIR
 done
