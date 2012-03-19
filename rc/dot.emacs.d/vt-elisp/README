@@ -1,0 +1,75 @@
+
+README for vt-elisp
+===================
+
+This CVS module contains some Emacs Lisp files that are useful for us
+working at Virtutech.  Some of them are actually useful even if you're
+not working at Virtutech.
+
+For easy access to the stuff in here, add the following to your .emacs
+file:
+
+        (setq load-path (cons "/home/packages/vt-elisp" load-path))
+        (load "vt-elisp-start")
+
+If you have your own checked-out copy of vt-elisp, use that instead of
+"/home/packages/vt-elisp".
+
+* bugz.el
+
+This is a read-only frontend to Bugzilla.  Read the documentation in
+the file for more information.  To get you started, try the following:
+
+        M-x bugz-list
+        M-x bugz-view-bug
+
+* ddl-mode.el
+
+This is a major mode for editing DDL (devgen) files.  It includes
+things such as indentation help and font-lock colorization. 
+
+* disassemble.el
+
+This file contains a command that will let you see disassembly of an
+object file (or binary) together with the source.  To start it, use:
+
+        M-x disasm-file
+
+and give it the name of an object file (or library or executable)
+compiled with debug info.
+
+* ifdef.el
+
+This file provides a minor mode that hightlights #ifdef'ed sections of
+a source file, and provides some useful commands for examining
+preprocessor defines.
+
+The commands in this minor mode are bound to key sequences starting
+with C-c #.  To see them all, use C-h # C-h.
+
+The vt-elisp-start file installs this mode to be enabled for all C
+files.
+
+* references.el
+
+This was something Marielle wrote for her thesis.
+
+* simgen.el
+
+This file contains an editing mode for SimGen files.
+
+* simics-conf.el
+
+This file contains an editing mode for Simics configuration files.
+
+* simics.el
+
+This is the interactive Simics mode.  It lets you run Simics in an
+Emacs buffer, complete with tab-completion, and other special
+features.  To start it, use:
+
+        M-x simics
+
+Have fun,
+David
+

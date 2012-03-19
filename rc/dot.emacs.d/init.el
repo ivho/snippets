@@ -32,6 +32,16 @@
   (setq indent-tabs-mode t)
   (setq c-basic-offset 4))
 
+(defun simics-c-mode ()
+  "C mode with adjusted defaults for use with simcis."
+  (interactive)
+  (c-mode)
+  (c-set-style "K&R")
+  (setq tab-width 4)
+  (setq show-trailing-whitespace t)
+  (setq indent-tabs-mode nil)
+  (setq c-basic-offset 4))
+
 ;;(add-to-list 'load-path "/usr/share/doc/git-core/contrib/emacs/")
 
 ;;(require 'git)
@@ -46,11 +56,10 @@
 (global-set-key [(meta return)] 'goto-line)
 
 ;;DML stuff
-
-(load-file "~/.emacs.d/dml/dml-mode.el")
+(setq load-path (cons "~/.emacs.d/vt-elisp" load-path))
+(load "vt-elisp-start")
 (add-hook 'dml-mode-hook
   (function (lambda ()
-              (setq indent-tabs-mode nil)
               (setq show-trailing-whitespace t))))
 
 (add-hook 'python-mode-hook
