@@ -1,0 +1,10 @@
+#!/bin/sh
+B=/home/ivho/proj
+GITS="$B/adp"
+GITS="${GITS} $B/linux-2.6"
+GITS="${GITS} $B/simics46"
+
+for a in $GITS ; do
+    echo === $a
+    (cd $a ; git diff --stat)
+done

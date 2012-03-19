@@ -1,0 +1,1 @@
+/folk/svc-simics/scripts/periodic_build.sh 4.6 http://ala-svn.wrs.com/svn/Simics/simics/branches/4.6_swe-wri9722 QSP  > /folk/svc-simics/logs/periodic-4.6-qsp-branch.log
