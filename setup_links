@@ -4,6 +4,7 @@ import os
 
 symlinks=[
     (".emacs.d", "rc/dot.emacs.d"),
+    (".gitconfig", "rc/dot.gitconfig"),
     (".bashrc", "rc/dot.bashrc"),
     ("bin", "bin")]
 

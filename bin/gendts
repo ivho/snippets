@@ -1,0 +1,16 @@
+#!/usr/bin/python
+cpu="""
+		PowerPC,e600@%d {
+			device_type = "cpu";
+			reg = <0x%x>;
+			clock-frequency =   <1000000000>;
+			timebase-frequency = <125000000>;
+			bus-frequency = <0>;
+			/* Following required by dtc but not used */
+			i-cache-size = <0x4000>;
+			d-cache-size = <0x4000>;
+		};
+"""
+
+for x in xrange(128):
+    print cpu % (x,x)

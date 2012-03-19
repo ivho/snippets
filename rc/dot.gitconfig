@@ -1,0 +1,10 @@
+[color]
+	ui = auto
+[user]
+	name = Ivar Holmqvist
+	email = ivarholmqvist@gmail.com
+
+[alias]
+    lol = log --graph --decorate --pretty=oneline --abbrev-commit
+    lola = log --graph --decorate --pretty=oneline --abbrev-commit --all
+    dc = diff --cached

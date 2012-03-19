@@ -1,0 +1,15 @@
+#!/bin/sh
+
+MDIR=/sys/module/$1/parameters
+if [ ! -d $MDIR] ; then
+    echo "Module $a isn't loaded or doesn't have any params."
+    exit 1
+fi
+
+echo MDIR=$MDIR
+cd $MDIR
+echo PWD=$PWD
+
+for a in * ; do
+    echo $a=$(cat $a)
+done
