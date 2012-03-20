@@ -101,3 +101,5 @@ if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
 fi
 
 export PATH=$PATH:$HOME/bin
+
+echo export DISPLAY=$DISPLAY > ~/last_display
