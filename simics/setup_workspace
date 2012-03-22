@@ -1,24 +1,44 @@
 #!/usr/bin/python
 
 import os
+import sys
+
 
 def setup_link(svn, ws, dev, is_comp):
     src="%s/src/%s/%s" % (svn, ("devices","components")[is_comp], dev)
     dst="%s/modules" % ws
     cmd="ln -s %s %s" % (src, dst)
+    if os.path.exists(os.path.join(dst, dev)):
+        print "%s exists skipping" % dev
     os.system(cmd)
-    print "cmd: %s" % cmd
+#    print "cmd: %s" % cmd
 
+def usage():
+    print "setup_workspace <svn_branch> <prj_name> <dev_file>"
+    sys.exit(1)
 
 if __name__ == "__main__":
-    svn="/space/work/simics/ivho/4.4_lsi_acp34xx"
-    ws="/space/work/simics/nca/workspace"
-    f=open("acp3400.devices")
-    while True:
-        x=f.readline().rstrip('\n').split(' ')
-        print x
-        if len(x) != 2:
-            break
-        setup_link(svn, ws, x[1], x[0]=="C")
+    try:
+        svn=os.path.join("/space/work/simics/ivho/", sys.argv[1])
+        ws=os.path.join("/space/work/simics/", sys.argv[2])
+        ws=os.path.join(ws, "workspace")
+        f=open(os.path.join("/home/ivho/proj/projectlocker/snippets/simics/", sys.argv[3]))
+        if not (os.path.isdir(svn) and os.path.isdir(ws)):
+            usage()
+
+        while True:
+            x=f.readline().rstrip('\n').split(' ')
+#            print x
+            if len(x) != 2:
+                break
+            if (x[0][0] != "#"):
+                setup_link(svn, ws, x[1], x[0][0]=="C")
+
+        print "ws:", ws
+        print "svn:", svn
+
+    except IndexError:
+        usage()
+
 #    setup_link("", "/space/work/simics/nca/workspace", "ACP3400-devices", False)
 
