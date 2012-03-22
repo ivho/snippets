@@ -1,0 +1,13 @@
+VER=4.4
+BRANCH=4.4_usa-mas9519
+REV=5032
+PKG=Motherboard-express-uatx
+
+echo "rev    $REV"
+echo "branch $BRANCH"
+echo " $PKG"
+
+python revo-scripts/host_build.py --version $VER --host linux64 --svn-repository http://ala-svn/svn/Simics/simics/branches/$BRANCH --svn-revision $REV --package $PKG
+
+#svn export http://ala-svn.wrs.com/svn/Simics/build-scripts/trunk/revo-scripts/simics_id_rsa
+#echo ssh -i simics_id_rsa svc-simics@ala-simics-mini.wrs.com python revo-scripts/run_build.py  --version 4.4   --svn-repository http://ala-svn.wrs.com/svn/Simics/simics/branches/4.4_usa-mas9519 --package Motherboard-express-uatx

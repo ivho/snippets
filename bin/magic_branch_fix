@@ -1,0 +1,54 @@
+#!/bin/sh
+NEWBRANCHNAME=$1
+NEWBRANCHBASE=$2
+SRCBRANCH=$3
+DSTBRANCH=$4
+set -e
+
+#FIXME: Removed the creation of NEWBRANCHNAME from this script
+#  but haven removed the argument NEWBRANCHBASE...
+
+if [ -z $DSTBRANCH ] ; then
+    echo "usage: $0 NEWBRANCHNAME NEWBRANCHBASE SRCBRANCH DSTBRANCH"
+    exit 1
+fi
+#REPO=http:///space/work/simics/ivho/rawsvn2/simics
+REPO=http://ala-svn.wrs.com/svn/Simics/simics
+
+#DRY=echo
+
+echo "== svn merge + clean"
+(cd tmp_wc ; $DRY svn merge $REPO/$SRCBRANCH $REPO/$DSTBRANCH . )
+(cd tmp_wc ; find . -name \*.svn  | xargs $DRY rm -rf)
+
+echo "== Checking out $NEWBRANCHNAME again"
+$DRY rm -rf tmp_wc2
+$DRY svn co $REPO/$NEWBRANCHNAME tmp_wc2
+
+echo "== rsync tmp_wc -> tmp_wc2"
+$DRY rsync -av --delete --exclude=.svn tmp_wc/* tmp_wc2
+
+echo "== svn rm deleted files"
+(cd tmp_wc2 ;  svn status | grep -e '^!' | cut -b 9- | sed 's/^/svn rm --force \"/g; s/$/\"/g' > ../remove_cmds)
+if [ -z "$DRY" ] ; then
+    echo " == Non dry version"
+    ( cd tmp_wc2 ; cat ../remove_cmds | /bin/sh)
+else
+    echo " == Dry version"
+    cat remove_cmds
+fi
+
+echo "== svn Adding files"
+(cd tmp_wc2 ;  svn status | grep -e '^?'  | cut -b 9- | xargs $DRY svn add --no-ignore)
+
+
+
+#FIXME: remove empty dirs done manually and supervised (since it require commits)
+
+#cd tmp_wc
+#for a in $( find . -type d -a \( -name .svn -a -type d -prune -o -print \) )  ; do
+#    if [ $(ls -la $a | wc -l ) == 4 ] ; then
+#	svn rm --force $a
+#    fi
+#    svn commit -m "removing empty dirs"
+#done 

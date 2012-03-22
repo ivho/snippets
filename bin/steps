@@ -1,0 +1,66 @@
+# Create new branch
+$ svn cp -m "Create new 4.6 branch based on 4.4@5671" http://ala-svn.wrs.com/svn/Simics/simics/branches/4.4@5671 http://ala-svn.wrs.com/svn/Simics/simics/branches/4.6_new
+
+# Check out a clean wc
+$ svn co http://ala-svn.wrs.com/svn/Simics/simics/branches/4.6_new tmp_wc
+$ cd simics4.6_new/
+$  ~/bin/magic_branch_fix branches/4.6_new dummy branches/4.4 branches/4.6
+
+$ cd tmp_wc2
+$ cd tmMade 4.6_new identical to 4.6
+
+# remove empty dirs left by magic_branch_fix (done in multiple steps)
+
+$ ~/bin/remove_empty
+$ svn rm --force src/extensions/tcf-agent/
+$ svn commit -m "Remove some empty dirs to avoid conflicts for next merge." 
+Committed revision 5674.
+$ ~/bin/remove_empty
+$ svn commit -m "Removed more empty dirs to avoid conflicts for next merge." 
+$ ~/bin/remove_empty
+$ svn commit -m "Removed more empty dirs to avoid conflicts for next merge. (again)" 
+
+# Merge the 4.4 history
+$ merge --accept mine-full  http://ala-svn.wrs.com/svn/Simics/simics/intel/4.4  http://ala-svn.wrs.com/svn/Simics/simics/branches/4.4 .
+....
+Summary of conflicts:
+  Tree conflicts: 213
+
+# Keep status (conflicts) for future reference
+$ svn status > ../conflicts_i44_w44_on_46_new.txt
+
+# Resolve "local delete, incoming edit upon merge" by accepting discarding the edit
+grep -C 0  "^!     C" ../conflicts_i44_w44_on_46_new.txt   | cut -b 9- | xargs -n 1 echo svn resolve --accept working > ../resolve_accept_working
+
+/bin/sh <  ../resolve_accept_working
+
+# Resolve "local add, incoming add upon merge" conflicts by using "our" (4.6) add
+svn status | grep -A 0 -e '^      C' | cut -b 9- | xargs -n 1 echo svn resolve --accept working > ../conflict_added_in_both
+
+/bin/sh < ../conflict_added_in_both 
+
+# These are the non-conflict changes that we apply, keeping	
+cat ../conflicts_i44_w44_on_46_new.txt  | grep -e '^M' | grep -v -e '^A  \+' | cut -b 9- | xargs svn diff --diff-cmd diff -x -uw > ../changed_in_both.diff
+
+# The rest is new stuff from 4.4 that we add with history.
+
+# Finally lets commit, the merge.
+$ svn commit -m" Merge non-conflicting changes between intel/4.4 and branches/4.4 to branches/4.6_new"
+
+
+===TODO===
+- rename branches/4.6 branches/4.6_old
+- Fix revo _or_ rename 4.6_new -> 4.6
+- Email with instructions.
+- Block commits in intel/4.6
+
+later:
+- Start merging workspace/config/dist with 4.4
+
+Important information:
+
+The branch:
+http://ala-svn.wrs.com/svn/Simics/simics/branches/4.6
+
+is now a completely different branch than
+

@@ -1,0 +1,5 @@
+#!/bin/sh
+DRY=echo
+#(cd tmp_wc ;  svn status | grep -e '^!' | cut -b 9- > ../removed)
+(cd tmp_wc ; for a in $(cat ../removed) ; do echo $a ; done)
+

@@ -1,0 +1,89 @@
+#!/usr/bin/python
+
+""" Create a wiki EDITTABLE from svn status"""
+
+import sys
+
+#FIXME: should use
+cols=["id", "svnentry", "state", "who", "comment", "log"]
+
+class Row():
+    def __init__(self):
+        pass
+    def __str__(self):
+        c="|"
+        for x in cols:
+            try:
+                c+=self.__dict__[x]+"|"
+            except KeyError:
+                if x == "state":
+                    c+="unhandled|"
+                #default to nothing
+                else:
+                    c+="|"
+        return c
+
+
+def createTable():
+    fmt="|"
+    fmt+="label, 0"
+    fmtrows={}
+    fmt=Row()
+    fmt.svnentry="label, 0"
+    fmt.state="radio, 0, unhandled, %STATES%"
+    fmt.who="select , 0, %REVIEW_RESPONSIBLES%"
+#    for u in users:
+#        fmt.who+=",%s" % u
+    fmt.comment="label, 0"
+    fmt.log="text, 32" #fixme, editbox
+
+    table="%%TABLE{ sort=\"on\" tableborder=\"0\" cellpadding=\"4\" cellspacing=\"3\" cellborder=\"0\" headerbg=\"#D5CCB1\" headercolor=\"#666\" databg=\"#FAF0D4, #F3DFA8\" headerrows=\"%d\"  }%%" % len(cols)
+    edittable="%%EDITTABLE{ header=\"on\" format=\"%s\" changerows=\"off\" javascriptinterface=\"on\" headerislabel=1 }%%" % fmt
+#    print edittable
+#    print table
+    header=Row()
+    for x in cols:
+        header.__dict__[x] = "*%s*" % x
+#    print header
+
+    def skip(a,b,c):
+        pass
+    def handle(svnentry,comment,t):
+        r=Row()
+        r.svnentry=svnentry
+        r.comment=comment
+        r.id=str(len(t))
+        t.append(r)
+
+
+    conflicts=[]
+    modified=[]
+    add=[]
+    for l in sys.stdin.readlines():
+        x=l.rstrip("\n")
+        state=x[0:8]
+        skipme=("", skip, None)
+        statedict={
+            "      > ": skipme,
+            "A  +    ": ("add with history", handle, add),
+            "      C ": ("local add, incoming add upon merge", handle, conflicts),
+            "!     C ": ("local missing, incoming edit upon merge", handle, conflicts),
+            " M      ": ("modified", handle, modified),
+            "M       ": ("property modified", handle, modified),
+            "X       ": ("svn:external ", skip, None),
+            "Performi": skipme,
+            "" : skipme
+            }
+
+        (c,h,t)=statedict[state]
+        h(x[8:], c, t)
+
+    for t in ["conflicts", "modified", "add"]:
+        x=file("tables/%s.wiki" % t, "w")
+        x.write("%s\n" % table)
+        x.write("%s\n" % edittable)
+        x.write("%s\n" % header)
+        for row in locals()[t]:
+            x.write("%s\n" % row)
+
+createTable()
