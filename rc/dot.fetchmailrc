@@ -1,0 +1,1 @@
+poll prod-webmail.windriver.com protocol imap username "CORP/iholmqvi/ivar.holmqvist" password "KalleKula88" ssl keep mda "/home/ivho/bin/uploadgmail"
