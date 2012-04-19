@@ -11,11 +11,29 @@ def solve(inf, outf):
 
         linestr=inf.readline().split(' ')
         lineint=map(int, linestr)
-        outf.write("Case #%d: " % lineno)
-
-        for val in lineint:
-            outf.write("0x%08x " % val)
-        outf.write("\n")
+        outf.write("Case #%d: " % (lineno + 1))
+        L=lineint[0]
+        M=lineint[1]
+        K=lineint[2:]
+#        print K
+        print "(stock) L", L
+        print "(numfig) M", M
+        print "(want) K", K
+        minx=0
+        avail=L*M
+        print "avail", avail
+        print "minx", minx
+        for val in K:
+            x=L*(M-1)+val
+            print "x", x
+            if x>avail:
+                minx=-1
+                break
+            minx=max(x, minx)
+            print "new:", minx
+#            outf.write("%d " % val)
+        print "ANS:", minx
+        outf.write("%d\n" % minx)
 
 
 if __name__ == "__main__":
