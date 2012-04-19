@@ -5,18 +5,18 @@ import sys
 
 def solve(inf, outf):
     firstline=inf.readline().split()
-    nocase=int(firsline[0])
+    nocases=int(firstline[0])
 
-    for lineno in nocases:
+    for lineno in xrange(nocases):
 
-        linestr=inf.readline().split()
+        linestr=inf.readline().split(' ')
         lineint=map(int, linestr)
         outf.write("Case #%d: " % lineno)
 
-        for val in linea:
+        for val in lineint:
             outf.write("0x%08x " % val)
-
         outf.write("\n")
+
 
 if __name__ == "__main__":
     try:
