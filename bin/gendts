@@ -1,8 +1,59 @@
 #!/usr/bin/python
+import sys
+
+template="""
+/*
+ * Copyright 2012, Wind River
+ *
+ * This file is licensed under
+ * the terms of the GNU General Public License version 2.  This program
+ * is licensed "as is" without any warranty of any kind, whether express
+ * or implied.
+ */
+
+/* This is a fully populated dts file for a QSP %(ARCH)s board. The
+ * actual number of cpus and devices can controlled from simics
+ * and we expect to silently fail probing of non-existant devices.
+ */
+
+/dts-v1/;
+
+/ {
+	model = "QSP %(ARCH)s Simple";
+	compatible = "simics,qsp-%(arch)s";
+	#address-cells = <1>;
+	#size-cells = <1>;
+	chosen {
+		bootargs = "%(bootargs)s";
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+%(cpus)s
+	};
+
+	memory {
+		device_type = "memory";
+		reg = <0x0 0x%(mem)08x>;
+	};
+
+	soc@0xe0000000 {
+		#address-cells = <2>;
+		#size-cells = <1>;
+		device_type = "soc";
+		compatible = "simple-bus";
+		ranges = <%(ranges)s>;
+		bus-frequency = <0>;
+%(devices)s
+	};
+};
+"""
+
 cpu="""
-		PowerPC,e600@%d {
+		PowerPC,e600@%(i)d {
 			device_type = "cpu";
-			reg = <0x%x>;
+			reg = <0x%(i)x>;
 			clock-frequency =   <1000000000>;
 			timebase-frequency = <125000000>;
 			bus-frequency = <0>;
@@ -12,5 +63,301 @@ cpu="""
 		};
 """
 
-for x in xrange(128):
-    print cpu % (x,x)
+sysregs="""
+		SYSREGS: sysregs {
+			device_type = "sysregs";
+			compatible = "qsp,sysregs";
+			reg = <%(index)d 0x0 0x1000>;
+		};
+"""
+
+pic="""
+		PIC: interrupt-controller@0,0 {
+			#interrupt-cells = <2>;
+			cell-index = <0>;
+			device_type = "interrupt-controller";
+			compatible = "qsp-pic";
+			interrupt-controller;
+			reg = <0 0x0 0x1000>;
+		};
+"""
+
+timer="""
+		TIMER%(i)d: qsptimer%(i)d {
+			compatible = "qsp,timer";
+			reg = <%(index)d 0x0 0x1000>;
+			interrupt-parent = <&PIC>;
+			interrupts = <%(irq)d 0x1>;
+		};
+"""
+
+mac="""
+		ETH%(i)d: eth%(i)d {
+			device_type = "eth";
+			compatible = "qsp-mac";
+			reg = <%(index)d 0x0 0x1000>;
+			interrupt-parent = <&PIC>;
+			interrupts = <%(irq)d 0x1>;
+
+		};
+"""
+
+
+uart="""
+		UART%(i)d: qspserial%(i)d {
+			device_type = "serial";
+			compatible = "qsp-serial";
+			reg = <%(index)d 0x0 0x1000>;
+			clock-frequency = <1000000>; /* ignored by our driver, but needed by generic of_serial.c */
+			interrupt-parent = <&PIC>;
+ 			interrupts = <%(irq)d 0x1>;
+		};
+"""
+
+
+disk_ctrl="""
+		DISKCTL%(i)d: diskctrl%(i)d {
+			device_type = "disk-controller";
+			compatible = "qsp,disk-controller";
+			reg = <%(index)d 0x0 0x1000>;
+			interrupt-parent = <&PIC>;
+			interrupts = <%(irq)d 0x1>;
+		};
+"""
+rtc="""
+		RTC: rtc {
+			device_type = "rtc";
+			compatible = "qsp-rtc";
+			reg = <%(index)d 0x0 0x1000>;
+		};
+"""
+
+led="""
+		led%(i)d {
+		 	 label = "led%(i)d";
+		 	 index = <%(i)d>;
+		 	 linux,default-trigger = "default-on";
+%(xleds)s
+		};
+"""
+xxleds=""
+xleds="""
+			led0 {
+				label = "power";
+				index = <0>;
+				linux,default-trigger = "default-on";
+			};
+			led01 {
+				label = "heartbeat";
+				index = <1>;
+				linux,default-trigger = "heartbeat";
+			};
+			led02 {
+				label = "timer";
+				index = <2>;
+				//linux,default-trigger = "timer";
+			};
+			led03 {
+				label = "cpu0";
+				index = <3>;
+				//linux,default-trigger = "cpu0";
+			};
+			led04 {
+				label = "cpu1";
+				index = <4>;
+				//linux,default-trigger = "cpu1";
+			};
+			led05 {
+				label = "cpu2";
+				index = <5>;
+				//linux,default-trigger = "cpu2";
+			};
+			led06 {
+				label = "cpu3";
+				index = <6>;
+				//linux,default-trigger = "cpu3";
+			};
+			led07 {
+				label = "led07";
+				index = <7>;
+			};
+			led08 {
+				label = "led08";
+				index = <8>;
+			};
+			led09 {
+				label = "led09";
+				index = <9>;
+			};
+			led10 {
+				label = "led10";
+				index = <10>;
+			};
+			led11 {
+				label = "led11";
+				index = <11>;
+			};
+			led12 {
+				label = "led12";
+				index = <12>;
+			};
+			led13 {
+				label = "led13";
+				index = <13>;
+			};
+			led14 {
+				label = "led14";
+				index = <14>;
+			};
+			led15 {
+				label = "led15";
+				index = <15>;
+			};
+"""
+
+cpu_max = 128
+#uart_max = 1
+#disk_ctrl_max = 2
+#mac_max = 4
+rtc_max = 1
+#timer_max = 1
+sysregs_max = 1
+pic_max = 1
+
+# Single instance devices
+flash_base   = 0xd0000000
+pic_base     = 0xe0000000
+sysregs_base = 0xe0001000
+rtc_base     = 0xe0002000
+
+# Multi instance devices
+uart_base          = 0xe0010000
+uart_irq_base      = 16
+timer_base         = 0xe0020000
+timer_irq_base     = 32
+led_base           = 0xe0030000
+mac_base           = 0xe0040000
+mac_irq_base       = 64
+disk_ctrl_base     = 0xe0050000
+disk_ctrl_irq_base = 80
+
+dts=file("qsp.dts", "w")
+if __name__ == "__main__":
+
+
+    devices=""
+    ranges=""
+    index=0
+    refmanual_device_list = ""
+    for a in ["pic", "sysregs", "rtc", "uart", "timer", "led", "mac", "disk_ctrl"]:
+#    for a in ["mac", "disk_ctrl", "rtc", "led", "uart"]:
+        print "=== %s" % a
+        phys_base = None
+        try:
+            phys_base=locals()[a+"_base"]
+            print "%s base: 0x%08x" % (a,phys_base)
+        except KeyError:
+            print "no base %s" % a
+        irq_base = None
+        try:
+            irq_base=locals()[a+"_irq_base"]
+            print "%s irq base: %d" % (a,irq_base)
+        except KeyError:
+            print "no irq base %s" % a
+#        print "%s %08x %d" % (a, phys_base, irq_base)
+        num = 16
+        try:
+            num = locals()[a+"_max"]
+        except KeyError:
+            pass
+        try:
+#            dts.write("/* %s */\n" % a)
+            bulk=locals()[a]
+            print "num = %d" % num
+            for i in range(num):
+                try:
+                    irq = None
+                    try:
+                        irq = irq_base + i
+                    except:
+                        pass
+                    x=bulk % locals()
+                    devices += x
+                    phys_addr=phys_base+0x1000*i
+                    phys_addr_end = phys_addr+0xfff
+                    if num == 1:
+                        prettyname = a
+                    else:
+                        prettyname = a + str(i)
+                    if irq:
+                        irq_name = str(irq)
+                    else:
+                        irq_name = "n/a"
+                    refmanual_device_list += """
+<tr>
+ <td>%(prettyname)s</td>
+ <td>0x%(phys_addr)08x</td>
+ <td>0x%(phys_addr_end)08x</td>
+ <td>%(irq_name)s</td>
+</tr>
+""" % locals()
+
+
+                    ranges += "\t\t%(index)d 0 0x%(phys_addr)x 0x1000 //%(a)s%(i)d\n" % locals()
+#                    dts.write(x)
+                    index += 1
+
+                except  KeyError:
+                    print "failed to format %s" % a
+                    sys.exit(1)
+        except KeyError:
+            print "no bulk %s" % a
+            sys.exit(1)
+#    print locals()
+    print mac
+    print locals()["mac"]
+    print "DA"
+    ARCH="PPC"
+    arch="ppc"
+    mem=0x20000000
+    bootargs="rw root=0x6300 console=ttyAM0"
+    cpus=""
+    for i in range(cpu_max):
+        cpus+=cpu % locals()
+    
+    rangesx="""0  0 0xe0000000 0x1000 //pic
+			  2  0 0xe0002000 0x1000 //disk controller
+			  5  0 0xe0008000 0x0800 //serial_0
+			  6  0 0xe0008800 0x0800 //serial_1
+			  7  0 0xe0009000 0x1000 //sysregs
+			  8  0 0xe000a000 0x1000 //leds
+			  9  0 0xe000c000 0x1000 //rtc
+			  10 0 0xe0010000 0x1000 //eth0
+			  11 0 0xe0011000 0x1000 //eth1
+			  12 0 0xe0012000 0x1000 //eth2
+			  13 0 0xe0013000 0x1000 //eth3
+			  14 0 0xe0014000 0x1000 //eth4
+			  15 0 0xe0015000 0x1000 //eth5"""
+#    devices="dummy"
+			  
+    dts.write(template % locals())
+#for i in xrange(128):
+#    print #
+    memmap=file("/space/work/simics/qsp/Simics/src/docs/target-guide-qsp-common/memmap.docu", "w")
+    x="""/*
+<add id="qsp memmap table">
+<table border="true">
+<tr>
+<td><b>Device</b></td>
+<td><b>Physical start address</b></td>
+<td><b>Physical end address</b></td>
+<td><b>Interrupt</b></td>
+</tr>
+%s
+</table>
+</add>
+*/
+""" % refmanual_device_list
+
+    memmap.write(x)
+
