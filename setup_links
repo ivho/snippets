@@ -7,6 +7,7 @@ symlinks=[
     (".gitconfig", "rc/dot.gitconfig"),
     (".bashrc", "rc/dot.bashrc"),
     (".fetchmailrc", "rc/dot.fetchmailrc"),
+    (".inputrc", "rc/dot.inputrc"),
     ("bin", "bin")]
 
 
