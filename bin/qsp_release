@@ -1,0 +1,21 @@
+#/bin/sh
+
+tmp=$(date +%F_%H_%M_%S)
+tmpdir=/tmp/qsp_$tmp
+mkdir -p $tmpdir
+
+if [ $(hostname) == "nobu" ] ; then
+   builddir=/space/work/simics/qsp/release_build/
+   remote=localhost:/space/work/simics/repos/qsp.git
+   git archive --remote= master | tar -x -C $tmpdir
+   cd $tmpdir/scripts
+else
+   builddir=/tmp/kalle/
+fi
+simics_install=/space/work/simics/qsp/install
+
+echo "Starting tmp:$tmpdir build:$builddir"
+rm -rf $builddir/tmp
+rm -rf $builddir/build
+./create_qsp_release.sh $builddir $simics_install > $tmpdir/build.log 2>&1
+fi
