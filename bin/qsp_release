@@ -7,7 +7,7 @@ mkdir -p $tmpdir
 if [ $(hostname) == "nobu" ] ; then
    builddir=/space/work/simics/qsp/release_build/
    remote=localhost:/space/work/simics/repos/qsp.git
-   git archive --remote= master | tar -x -C $tmpdir
+   git archive --remote=$remote master | tar -x -C $tmpdir
    cd $tmpdir/scripts
 else
    builddir=/tmp/kalle/
