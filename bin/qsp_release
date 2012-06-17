@@ -1,6 +1,7 @@
 #/bin/sh
+set -o errexit
 
-tmp=$(date +%F_%H_%M_%S)
+tmp=$(date +%F_%H-%M)
 tmpdir=/tmp/qsp_$tmp
 mkdir -p $tmpdir
 
@@ -11,6 +12,8 @@ if [ $(hostname) == "nobu" ] ; then
    cd $tmpdir/scripts
 else
    builddir=/tmp/kalle/
+   echo "Warning using pre check out script."
+   cd /space/work/simics/qsp/qsp/scripts
 fi
 simics_install=/space/work/simics/qsp/install
 
@@ -18,4 +21,4 @@ echo "Starting tmp:$tmpdir build:$builddir"
 rm -rf $builddir/tmp
 rm -rf $builddir/build
 ./create_qsp_release.sh $builddir $simics_install > $tmpdir/build.log 2>&1
-fi
+
