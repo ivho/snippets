@@ -5,20 +5,25 @@ tmp=$(date +%F_%H-%M)
 tmpdir=/tmp/qsp_$tmp
 mkdir -p $tmpdir
 
-if [ $(hostname) == "nobu" ] ; then
+if [ $(hostname) == "nobux" ] ; then
    builddir=/space/work/simics/qsp/release_build/
    remote=localhost:/space/work/simics/repos/qsp.git
    git archive --remote=$remote master | tar -x -C $tmpdir
    cd $tmpdir/scripts
 else
-   builddir=/tmp/kalle/
+   builddir=/space/work/simics/qsp/release_build
    echo "Warning using pre check out script."
    cd /space/work/simics/qsp/qsp/scripts
 fi
 simics_install=/space/work/simics/qsp/install
 
-echo "Starting tmp:$tmpdir build:$builddir"
+echo "Removing old build/tmp dir"
 rm -rf $builddir/tmp
 rm -rf $builddir/build
-./create_qsp_release.sh $builddir $simics_install > $tmpdir/build.log 2>&1
+echo "Starting tmp:$tmpdir build:$builddir"
+echo "to check logfile:"
+echo "tail -f $tmpdir/build.log"
+echo ..
+./create_qsp_release.sh $builddir $1 $simics_install > $tmpdir/build.log 2>&1
+echo done
 
