@@ -2,6 +2,7 @@
 """upicasa.py -- an upload script for Picasa
 
   Copyright (C) 2010 Albertas Agejevas <alga@pov.lt>
+  Copyright (C) 2012 Ivar Holmqvist <ivarholmqvist@gmail.com>
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -17,6 +18,10 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+
+#
+# Copied upicasa.py by Albertas Agejevas and renamed to picasaweb.
+#
 
 import os
 import sys
