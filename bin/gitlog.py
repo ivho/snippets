@@ -8,13 +8,12 @@ from email.utils import parsedate_tz
 
 if __name__ == "__main__":
     os.system("rm /tmp/timerep.ivho")
-    for proj in "qsp", "u-boot", "linux_qsp", "vxworks_qsp", "qsp", "Simics":
-        os.system("cd /space/work/simics/qsp/%s" % proj)
-        os.system("git log --date=short --format=format:'%%at|%%an|%s|%%s'  --date=rfc --since=2012-01 >> /tmp/timerep.ivho" %
-                  proj)
-        os.system("echo >> /tmp/timerep.ivho")
-
-    f=file("/tmp/timerep.ivho")
+    for proj in "qsp", "u-boot", "linux_qsp", "vxworks_qsp", "Simics":
+        os.system("(cd /space/work/simics/qsp/%s ; git log --date=short --format=format:'%%at|%%an|%s|%%s'  --date=local --since=2012-01 >> /tmp/timerep.ivho ; echo >> /tmp/timerep.ivho )" %
+                  (proj, proj))
+        os.system("")
+    os.system("sort -nr /tmp/timerep.ivho > /tmp/timerep.sorted")
+    f=file("/tmp/timerep.sorted")
     lastweek = -1
     ld=-1
     while True:
@@ -24,7 +23,10 @@ if __name__ == "__main__":
 #        print xx
         (sdate,author,proj,msg)=xx.split('|')
 
-#        print sdate, author, msg
+#        print proj, sdate, author, msg
+        if not (author.startswith("Ivar") or author.startswith("iholmqvi")):
+#            print "skip"
+            continue
 #        sdate=x[0]
         try:
 #            datetime.datetime(*strptime(sdate,"%Y-%m-%d")[0:6])
