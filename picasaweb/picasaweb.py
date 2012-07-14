@@ -59,8 +59,8 @@ def get_auth():
         if not ans or ans[0] not in "Nn":
             config = ConfigParser.RawConfigParser()
             config.add_section("google")
-            config.set("google", "login", EMAIL)
-            config.set("google", "password", PASSWORD)
+            config.set("google", "login", email)
+            config.set("google", "password", password)
 
             if not os.path.isdir(config_dir):
                 os.makedirs(config_dir)
