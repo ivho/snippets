@@ -1,0 +1,15 @@
+#!/bin/sh
+for st in 100000 7827 10000 1000; do
+	for cores in 128 127 126 125 16 4 1; do
+	    echo cores:$cores st:$st
+	    if ! time ./bin/simics -batch-mode -e "\$cpu_switch_time=$st;\$cpu_cores=$cores" ./targets/qsp-ppc/qsp-linux-boot-test.simics -no-win -e 'run' > cores_${cores}_st_${st}.log; then
+		echo FAIL switch-time $st cores $cores
+		exit 1
+	    fi
+	    echo PASS switch-time $st cores $cores
+	    echo
+	    echo
+	    echo
+	done
+done
+q-
