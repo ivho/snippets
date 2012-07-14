@@ -1,6 +1,11 @@
 #/bin/sh
 set -o errexit
 
+if [ -z $1 ] ; then
+    echo "usage: $0 <what>"
+    exit 1
+fi
+
 tmp=$(date +%F_%H-%M)
 tmpdir=/tmp/qsp_$tmp
 mkdir -p $tmpdir
@@ -15,15 +20,24 @@ else
    echo "Warning using pre check out script."
    cd /space/work/simics/qsp/qsp/scripts
 fi
-simics_install=/space/work/simics/qsp/install
+simics_install=/tmp/lastest/simics-4.6.37
 
 echo "Removing old build/tmp dir"
 rm -rf $builddir/tmp
 rm -rf $builddir/build
+echo "Removing old vip dirs dirs"
+rm -rf ~/vip_qsp_*
+
 echo "Starting tmp:$tmpdir build:$builddir"
 echo "to check logfile:"
 echo "tail -f $tmpdir/build.log"
 echo ..
+
 ./create_qsp_release.sh $builddir $1 $simics_install > $tmpdir/build.log 2>&1
+if [ $? != 0 ]; then
+   echo "failed. see $tmpdir/build.log"
+   tail $tmpdir/build.log
+   exit 1
+fi
 echo done
 
