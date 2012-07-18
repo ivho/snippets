@@ -1,0 +1,97 @@
+#!/bin/bash
+#set -o errexit
+#set -o nounset
+
+WGET="wget --no-check-certificate"
+SIMICS_BASE_VERSION=4.6.40
+INSTALL_ONLY_DIR=$1
+if [ -z $INSTALL_ONLY_DIR  ]; then
+    if [ -z $1 ] ; then
+	echo "usage: $0 <inst-dir>"
+	echo ""
+	echo " example:"
+	echo "$0 20120522.19"
+	exit 1
+    fi
+    BUILD=$1
+else
+    BUILD=$INSTALL_ONLY_DIR
+fi
+
+# simics.net
+BASE_URL=https://www.simics.net/pub/simics/4.6_wzl263
+SRC_URL=$BASE_URL
+
+# ala-mini mirror, ALOT faster
+#BASE_URL=http://ala-simics-mini.wrs.com/simics/mp/latest/4.6/linux64.tar
+#SRC_URL=http://ala-simics-mini.wrs.com/simics/mp/latest/4.6/src.tar
+
+#QSP_URL=http://ala-simics-mini.wrs.com/builds/4.6/$BUILD/linux64/packages
+
+PKGS="1000-$SIMICS_BASE_VERSION"
+PKGS="$PKGS 1010-4.6.18"
+PKGS="$PKGS 1012-4.6.8"
+PKGS="$PKGS 13503-4.6.8"
+
+INST_DIR=$(readlink -m $INSTALL_ONLY_DIR)
+
+echo $INST_DIR
+
+DL=
+for p in $PKGS; do
+	DL="$DL $BASE_URL/simics-pkg-$p-linux64.tar"
+done
+
+for p in $DL  ; do
+	echo $p
+	fname=$(basename $p)
+	if echo $p | grep ala-simics-mini ; then
+	    echo "deleteing qsp package $fname"
+	    rm
+	     -f $fname
+	fi
+	if [ -f $fname ] ; then
+		echo $p exists
+	else
+		echo
+		$WGET $p
+	fi
+	if [ ! -f $fname ] ; then
+		echo "Failed to download..."
+		exit 1
+	fi
+done
+
+echo "Removing old unpack-dir"
+rm -rf ./simics-4.6-install
+for a in *.tar ; do
+	tar xf $a
+done
+
+echo "Removing old install"
+if [ -d $INST_DIR ] ; then
+	echo "$INST_DIR exists."
+else
+#rm -rf $INST_DIR
+	echo "Installing.."
+	mkdir -p $INST_DIR
+	(cd  ./simics-4.6-install  ; ./install-simics.pl -a -b -p $INST_DIR *.gz.tf ; cat install.log)
+	echo "Done"
+fi
+
+# fixme BASE_VERSION
+BASE_INSTALL=$INST_DIR/simics-$SIMICS_BASE_VERSION
+echo "Removing old workspace"
+rm -rf workspace
+
+echo "Setup workspace"
+cd /space/work/simics/rockwell
+rm -rf workspace
+$BASE_INSTALL/bin/workspace-setup workspace
+
+(cd workspace/targets ; rm -rf rockwell-ice2 ; ln -s /space/work/simics/ivho/Simics/targets/rockwell-ice2 .)
+(cd workspace/modules ; ln -s /space/work/simics/ivho/Simics/src/devices/denali-nand .)
+
+echo "Compile workspace."
+make -j 12 -C workspace
+#make test -C workspace
