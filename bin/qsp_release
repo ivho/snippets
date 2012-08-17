@@ -6,34 +6,40 @@ if [ -z $1 ] ; then
     exit 1
 fi
 
-tmp=$(date +%F_%H-%M)
+tmp=$(date +%F_%H-%M-%S)
+
 tmpdir=/tmp/qsp_$tmp
 mkdir -p $tmpdir
 
-if [ $(hostname) == "nobux" ] ; then
+if [ $(hostname) == "nobu" ] ; then
    builddir=/space/work/simics/qsp/release_build/
-   remote=localhost:/space/work/simics/repos/qsp.git
-   git archive --remote=$remote master | tar -x -C $tmpdir
-   cd $tmpdir/scripts
 else
-   builddir=/space/work/simics/qsp/release_build
-   echo "Warning using pre check out script."
-   cd /space/work/simics/qsp/qsp/scripts
+   builddir=/opt/$USER/qsp/release
 fi
-simics_install=/tmp/lastest/simics-4.6.37
+
+SVN_BRANCH=4.6_swe-wri9722
+SVN_BASE=http://ala-svn.wrs.com/svn/Simics/simics/branches
+svn cat $SVN_BASE/$SVN_BRANCH/scripts/qsp/create_qsp_release.sh > $tmpdir/create_qsp_release.sh
+chmod 755 $tmpdir/create_qsp_release.sh
+
+
+#simics_install=/tmp/lastest/simics-4.6.37
+simics_install=/space/work/simics/qsp/install/simics-4.6.39
 
 echo "Removing old build/tmp dir"
 rm -rf $builddir/tmp
-rm -rf $builddir/build
-echo "Removing old vip dirs dirs"
-rm -rf ~/vip_qsp_*
 
 echo "Starting tmp:$tmpdir build:$builddir"
 echo "to check logfile:"
 echo "tail -f $tmpdir/build.log"
 echo ..
 
-./create_qsp_release.sh $builddir $1 $simics_install > $tmpdir/build.log 2>&1
+
+rm -f /tmp/latest.log
+ln -s $tmpdir/build.log /tmp/latest.log
+
+$tmpdir/create_qsp_release.sh $builddir $1 $simics_install > $tmpdir/build.log 2>&1
+
 if [ $? != 0 ]; then
    echo "failed. see $tmpdir/build.log"
    tail $tmpdir/build.log
