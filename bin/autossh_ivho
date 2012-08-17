@@ -2,7 +2,7 @@
 DIR=/home/ivho/var
 PIDFILE=$DIR/autossh_svetsen.pid
 
-[ -d /proc/$(cat $PIDFILE) ] || AUTOSSH_PIDFILE=$PIDFILE autossh svetsen -R 8888:localhost:8888 -R 11022:localhost:22 -f -N
+[ -f /proc/$(cat $PIDFILE)/smaps ] || AUTOSSH_PIDFILE=$PIDFILE autossh svetsen -R 8888:localhost:8888 -R 11022:localhost:22 -f -N
 
 date >> $DIR/autossh_stamp.log
 

@@ -65,6 +65,7 @@ cpu="""
 
 sysregs="""
 		SYSREGS: sysregs {
+
 			device_type = "sysregs";
 			compatible = "qsp,sysregs";
 			reg = <%(index)d 0x0 0x1000>;
@@ -135,12 +136,20 @@ rtc="""
 led="""
 		led%(i)d {
 		 	 label = "led%(i)d";
-		 	 index = <%(i)d>;
+                         compatible = "leds-qsp";
+                         reg = <%(index)s 0x0 0x1000>;
+
 		 	 linux,default-trigger = "default-on";
 %(xleds)s
 		};
 """
 xxleds=""
+sled="""			led%(ledindex)d {
+				label = "led%(ledindex)d";
+				index = <%(ledindex)d>;
+			};
+"""
+
 xleds="""
 			led0 {
 				label = "power";
@@ -318,13 +327,14 @@ if __name__ == "__main__":
     print locals()["mac"]
     print "DA"
     ARCH="PPC"
-    arch="ppc"
+    arch=ARCH.lower()
     mem=0x20000000
     bootargs="rw root=0x6300 console=ttyAM0"
     cpus=""
-    for i in range(cpu_max):
-        cpus+=cpu % locals()
-    
+    if arch == "ppc":
+        for i in range(cpu_max):
+            cpus+=cpu % locals()
+
     rangesx="""0  0 0xe0000000 0x1000 //pic
 			  2  0 0xe0002000 0x1000 //disk controller
 			  5  0 0xe0008000 0x0800 //serial_0
@@ -343,7 +353,26 @@ if __name__ == "__main__":
     dts.write(template % locals())
 #for i in xrange(128):
 #    print #
-    memmap=file("/space/work/simics/qsp/Simics/src/docs/target-guide-qsp-common/memmap.docu", "w")
+    memmap=file("/space/work/simics/qsp/new_Simics/simics/src/docs/target-guide-qsp-common/memmap.docu", "w")
+
+    entry = """
+<tr>
+ <td>%(prettyname)s</td>
+ <td>0x%(phys_addr)08x</td>
+ <td>0x%(phys_addr_end)08x</td>
+ <td>%(irq_name)s</td>
+</tr>
+"""
+    refmanual_ram = entry % {"prettyname":"RAM",
+                            "phys_addr":0x0000000,
+                            "phys_addr_end":512<<20,
+                            "irq_name":"n/a"}
+
+    refmanual_flash = entry % {"prettyname":"FLASH",
+                              "phys_addr":0x0000000,
+                              "phys_addr_end":128<<20,
+                              "irq_name":"n/a"}
+
     x="""/*
 <add id="qsp memmap table">
 <table border="true">
@@ -353,11 +382,13 @@ if __name__ == "__main__":
 <td><b>Physical end address</b></td>
 <td><b>Interrupt</b></td>
 </tr>
-%s
+%(refmanual_ram)s
+%(refmanual_flash)s
+%(refmanual_device_list)s
 </table>
 </add>
 */
-""" % refmanual_device_list
+""" % locals()
 
     memmap.write(x)
 

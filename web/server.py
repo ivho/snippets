@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import sys
+import os
 import BaseHTTPServer
 from SimpleHTTPServer import SimpleHTTPRequestHandler
 
@@ -8,6 +9,7 @@ HandlerClass = SimpleHTTPRequestHandler
 ServerClass  = BaseHTTPServer.HTTPServer
 Protocol     = "HTTP/1.0"
 
+#os.chdir("/space/work/simics/qsp/qsp/workspace/linux64/obj/docs/target-guide-qsp-ppc/")
 if sys.argv[1:]:
     port = int(sys.argv[1])
 else:
