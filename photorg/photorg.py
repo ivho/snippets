@@ -30,6 +30,9 @@ import time
 import argparse
 import string
 import shutil
+import urllib
+import urllib2
+import calendar
 
 from PIL import Image
 from PIL.ExifTags import TAGS
@@ -40,8 +43,8 @@ import gdata.media
 import gdata.geo
 
 
-HASH_BYTES=64*1024
-MIN_SIZE=256*1024
+HASH_BYTES=2*1024
+MIN_SIZE=32*1024
 
 def dprint(x):
     global p
@@ -54,7 +57,6 @@ def is_photo(fname):
         if lcase.endswith(x):
             return True
     return False
-
 
 def get_auth():
     """Get authentication credentials.
@@ -125,13 +127,40 @@ class Collection(object):
         self.name = name
         self.tot_photos = 0
         self.would_copy = 0
+        self.tot_size = 0
+        self.skipped = 0
+        self.no_exif = 0
+        self.failed_to_open = 0
+        self.all_tags = set()
+        self.tag_count = {}
+        self.too_small = 0
+        if name:
+            self.default_album_prefix = name
+        else:
+            self.default_album_prefix = ""
+
         if sync_to_picasa:
             self.picasa = self.Picasa()
         else:
             self.picasa = None
 
+
     def add_photos(self):
         for root, dirs, files in os.walk(self.root):
+            prefix=self.default_album_prefix
+            d=root
+
+            while d.rstrip("/") != self.root.rstrip("/") and d != "/":
+                try:
+                    prefix=file(os.path.join(d, "album_prefix"), "r").read().strip()
+                    break
+                except:
+                    pass
+                d=os.path.dirname(d)
+            if len(files) == 0:
+                dprint("empty dir % s" % root)
+                continue
+#            for f in [files[0]]:
             for f in files:
                 fp=os.path.join(root, f)
                 if is_photo(fp):
@@ -140,21 +169,45 @@ class Collection(object):
                         bdir = string.replace(root, self.root, os.path.join(self.backup.root, self.name, ""))
                     #ignore broken links...
                     if os.path.exists(fp):
-                        dprint("checking %s" % fp)
-                        self.handle_photo(fp, root, bdir)
+                        dprint("checking %s prefix<%s>" % (fp, prefix))
+                        if prefix != "":
+                            xprefix = prefix+"-"
+                        else:
+                            xprefix = prefix
+                        self.handle_photo(fp, root, bdir, prefix = xprefix)
                 else:
-                    dprint("%s not a photo" % fname)
+                    dprint("%s not a photo" % fp)
 
     class Picasa():
         def __init__(self):
+            global p
             self.client = None
             self.albums = None
             self.photos = {}
             self.album_check = {}
             self.fetch_picasa()
 
+        def download_photo(self, photo):
+            "Download the data at URL to the current directory."
+            fname=self.get_filename(photo)
+            print "Downloading %s" % (fname)
+            urllib.urlretrieve(url, "dl/" + self.fname)
+
+        def unquote_recurse(self, url, max=10):
+            u=urllib2.unquote(url)
+            if u == url or max == 0:
+                return u
+            return self.unquote_recurse(u, max-1)
+
+        def get_filename(self, photo):
+            url=self.unquote_recurse(photo.content.src)
+            fname=url[url.rindex('/') + 1:]
+            return fname
+
         def fetch_picasa(self):
             """Fetch albums and photo info from picasa account."""
+            global p
+
             self.client=login()
             self.albums = self.client.GetUserFeed(user=self.client.email)
             for album in self.albums.entry:
@@ -163,42 +216,142 @@ class Collection(object):
                 album.photos = self.client.GetFeed(
                     '/data/feed/api/user/%s/albumid/%s?kind=photo' % (
                         self.client.email, album.gphoto_id.text))
+                if p.delete_picasa:
+                    if self.client.email != 'ivartestimage@gmail.com':
+                        print "Refusing to delete on <%s>" % self.client.email
+                        sys.exit(1)
+                    print "deleting album"
+                    self.client.Delete(album)
+                    continue
 
                 for photo in album.photos.entry:
-                    key="%s %s" % (photo.title.text, photo.timestamp.text)
+                    # This looks like a picasa timezone bug
+                    # subtracting 2 hours since we're in Sweden...
+                    try:
+                        dummy=photo.exif.time.text
+                    except AttributeError:
+                        print "Failed to get exif.time for %s (url:%s)" % (self.get_filename(photo),  photo.content.src)
+                        continue
+
+                    print "picasa <%s> - %s (org:%s)"  % (self.get_filename(photo).lower(), time.ctime(int(photo.exif.time.text)/1000), photo.exif.time.text)
+                    key="%s %d" % (self.get_filename(photo) .lower(), (int(photo.exif.time.text)/1000)) # -3600 removed
                     self.photos[key] = photo
-                    dprint("added key:<%s> to dict unique:%s" % (key, photo.exif.imageUniqueID.text))
+                    dprint("added key:<%s>  (org time %s) to dict unique:%s src:%s " % (key, photo.exif.time.text, photo.exif.imageUniqueID.text, photo.content.src))
+#                    print photo
+#                    dprint("w:%d h:%d s:%d" % (photo.content.width,
+#                                               photo.content.height,
+#                                               photo.content.fileSize))
+#                    self.download_file(photo.content.src)
 
 
-        def add_to_picasa(self, ctime, fp):
-            print ctime
-            key = "%s %d" % (os.path.basename(fp), int(time.mktime(ctime)))
-            album_name = "test-%d-%02d-%02d" % (ctime.tm_year,ctime.tm_mon,ctime.tm_mday)
+        def add_to_picasa(self, ctime, fp, tags, prefix):
+            global p
+            album=None
+            album_url=None
+            # using calendat.timegm instead time.mktime since picasa will return TZ adjusted times...
+            key = "%s %d" % (os.path.basename(fp).lower(), int(calendar.timegm(ctime)))
+            album_name = prefix+time.strftime("%Y-%b",ctime)
             if self.photos.has_key(key):
                 dprint("%s already in picasa" % key)
                 return
+            else:
+                print "KEY:<%s> not in picasa .photos" % key
 
             if not self.album_check.has_key(album_name):
                 dprint("Creating album %s" % album_name)
-                self.album_check[album_name] = self.client.InsertAlbum(title=album_name, summary="Created by photorg.py script")
+                if not p.dry_run:
+                    album_date=calendar.timegm(ctime)*1000 # picasa want's epoc milliseconds
+                    album = self.client.InsertAlbum(title=album_name, summary="Created by photorg.py script", access='private', timestamp=str(album_date))
+                    self.album_check[album_name] = album
+                    album_url = '/data/feed/api/user/%s/albumid/%s' % (self.client.email, album.gphoto_id.text)
+                else:
+                    album_url = 'dummy'
+                    album=None
             else:
-                dprint("%s already exists, reusing" % album_name)
-            album=self.album_check[album_name]
-            album_url = '/data/feed/api/user/%s/albumid/%s' % (self.client.email, album.gphoto_id.text)
+                album = self.album_check[album_name]
+                album_url = '/data/feed/api/user/%s/albumid/%s' % (self.client.email, album.gphoto_id.text)
 
             dprint("Inserting photo: <%s> key:<%s> on url %s" % (album_name, key, album_url))
-#            photo = self.client.InsertPhotoSimple(album_url, os.path.basename(fp),
-#                                                '', # title
-#                                                fp, content_type='image/jpeg')
+
+            #FIXME: gdata.photos.service.GooglePhotosException: (500, 'Internal Server Error', 'Unknown')
+            if not p.dry_run:
+                photo = self.client.InsertPhotoSimple(album_url, os.path.basename(fp),
+                                                      '', # title
+                                                      fp, content_type='image/jpeg')
+                print("Uploading photo %s to album %s" % (os.path.basename(fp), album_name))
+                self.photos[key]=photo
+                photo_url = '/data/feed/api/user/%s/albumid/%s/photoid/%s' % (self.client.email, album.gphoto_id.text, photo.gphoto_id.text)
+                
+                for tag in tags:
+                    dprint("inserting tag %s" % tag)
+                    tag = self.client.InsertTag(photo_url, tag)
+            else:
+                self.photos[key]="dummy"
+                dprint("skipping - dry-run.")
 
 
-    def handle_photo(self, fp, root, bdir):
-        dprint("====HANDLE==== %s" % fp)
+    def tag_filter(self, d):
+        black_list=[
+            "cs1",
+            "old_gamepc",
+            "proj: 160",
+            "src.slask",
+            "100olymp",
+            "root",
+            "100_____",
+            "$Desktop",
+            "[C]",
+            "101MSDCF",
+            "102MSDCF",
+            "lib",
+            "var",
+            "photos",
+            "unknown_disk",
+            "$My Pictures",
+            "AnnaBritta",
+            "backups",
+            "wd_passport",
+            "45AA-0E52",
+            "All_Photos",
+            "DCIM",
+            "dcim"]
+        for x in black_list:
+            if x == d:
+                return False
+
+        d.replace('olymp','')
+        try:
+            x=int(d)
+            return False
+        except ValueError:
+            if len(d) == 0:
+                return False
+            return True
+
+    def create_tags(self, fp):
+        dname=os.path.dirname(fp)
+        dprint("fp:%s root:%s %s" % (fp, self.root, dname))
+        if not dname.startswith(self.root):
+            print "Ouch"
+            sys.exit(1)
+            return
+        #picasa tags are not allowed to contain ","
+        dname=dname.replace(",","_")
+        dirs=dname[len(self.root):].split('/')
+        return filter(self.tag_filter, dirs)
+
+    def handle_photo(self, fp, root, bdir, prefix):
+#        print "%s" % fp
+        dprint("====HANDLE==== %s (prefix:%s)" % (fp, prefix))
+
         if os.path.getsize(fp) < MIN_SIZE:
+            print "Too small:", fp
+            self.too_small += 1
             return
         m=hashlib.md5()
         m.update(file(fp).read(HASH_BYTES))
         hashstr=m.hexdigest()
+
         self.tot_photos += 1
         if self.backup and hashstr in self.backup.photos:
             (ofp, oc, make)=self.backup.photos[hashstr]
@@ -207,28 +360,72 @@ class Collection(object):
             return
 
         try:
-            exif=get_exif(fp)
-            print "uniq:%s" % exif['imageUniqueID']
+            exif={}
             try:
-                c = time.strptime(exif['DateTime'], "%Y:%m:%d %H:%M:%S")
+                exif=get_exif(fp)
+            except AttributeError:
+#                print("Failed to parse exif for %s" % fp)
+                self.no_exif += 1
+                return
+
+            try:
+                dprint("uniq:%s" % exif['imageUniqueID'])
             except KeyError:
-                dprint("Failed to find date %s" % fp)
-#                return
-                c=time.now()
+                dprint("no imageUniqueID found.")
+
+
+            # picasa only uses DateTimeOriginal when returning photo.exif.time
+            # so if it's not there, we _REALLY_ should upload it since we can't detect duplicates
+            # for it.
+            # Try something like:
+            # $ exiftool '-CreateDate<ModifyDate' bad_time.jpg
+            #
+            try:
+                c = time.strptime(exif['DateTimeOriginal'], "%Y:%m:%d %H:%M:%S")
+            except KeyError:
+                print("Failed to find date %s" % fp)
+                self.skipped += 1
+                return
+#                c=time.localtime()
             except ValueError:
-                dprint("Failed to parse date %s" % fp)
-                c=time.now()
-#                return
+                print("==== Failed to parse date %s <%s>" % (fp, exif["DateTimeOriginal"]))
+                self.skipped += 1
+                for a in exif:
+                    try:
+                        if "date" in a.lower() or "time" in a.lower():
+                            dprint("found tag <%s> -> <%s>" % (a,exif[a]))
+                            try:
+                                dprint("exif:%s" % exif[a])
+                                xxx = time.strptime(exif[a], "%Y:%m:%d %H:%M:%S")
+                                print("Could use %s -> %s " % ( a, exif[a]))
+                                # but we don't, see comment above. We would need to
+                                # modify the original and I don't want that here, should
+                                # go in separate script.
+                            except ValueError:
+                                dprint("no parse <%s>" % exif[a])
+                                pass
+                            except TypeError:
+                                dprint("no parse <%s>" % a)
+                    except AttributeError:
+                        pass
+                return
 
             try:
                 make = exif['Make']
             except KeyError:
                 make = 'unknown'
 
-#                return
-#            if self.sync_with_picasa:
+            tags = self.create_tags(fp)
+            for t in tags:
+                self.all_tags.add(t)
+                try:
+                    self.tag_count[t] += 1
+                except KeyError:
+                    self.tag_count[t] = 1
+
             if self.picasa:
-                self.picasa.add_to_picasa(c, fp)
+                dprint("tags: %s" % tags)
+                self.picasa.add_to_picasa(c, fp, tags, prefix)
 
             if not hashstr in self.photos:
                 if bdir:
@@ -243,6 +440,7 @@ class Collection(object):
                         self.would_copy += 1
                         print "(dry)copy %s -> %s" % (fp, dst)
                 self.photos[hashstr]=(fp, c, make)
+                self.tot_size += os.path.getsize(fp)
                 if not root in self.dirs:
                     self.dirs[root] = 1
                 else:
@@ -251,13 +449,12 @@ class Collection(object):
                 global doubles
                 (ofp, oc, make)=self.photos[hashstr]
 
-                print "double %s (%s)" % (fp, ofp)
+                dprint("double %s (%s)" % (fp, ofp))
                 self.doubles += 1
 
         except IOError:
-            dprint("Failed to open %s" % fp)
-        except None:
-            dprint("Failed to parse exif for %s" % fp)
+            print("Failed to open %s" % fp)
+            self.failed_to_open += 1
 
 def usage():
     print "usage: ..."
@@ -271,11 +468,12 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--dry-run", action="store_true")
     parser.add_argument("-v", "--verbose", action="store_true")
     parser.add_argument("-p", "--picasa", action="store_true")
+    parser.add_argument("-x", "--delete-picasa", action="store_true")
     global p
     p=parser.parse_args()
-    
+
     print   p.backup_dir
-    print p
+
     b=None
     if p.backup_dir:
         print "Scanning backup..."
@@ -284,18 +482,34 @@ if __name__ == "__main__":
         print "done."
 
     print "Scanning source..."
-    s=Collection(p.source_dir[0], backup = b, name = p.name[0], sync_to_picasa = p.picasa)
+
+    try:
+        name=p.name[0]
+    except TypeError:
+        name=None
+
+    s=Collection(p.source_dir[0], backup = b, name = name, sync_to_picasa = p.picasa)
+    if p.delete_picasa:
+        sys.exit(0)
 
     s.add_photos()
     print "done"
 
     for d in s.dirs:
-        print "DIR %d %s" % (s.dirs[d], d)
-    print "photos:     %d" % len(s.photos)
-    print "tot_photos: %d" % s.tot_photos
-    print "would_copy: %d" % s.would_copy
-    print "doubles:    %d" % s.doubles
-    print "already:    %d" % s.already_in_backup
+        dprint("DIR %d %s" % (s.dirs[d], d))
+    for key, value in sorted(s.tag_count.iteritems(), key=lambda (k,v): (v,k)):
+        print("%s: %s" % (key, value))
 
-    print "backup tot_photos: %d" % b.tot_photos
+    print "photos:         %d" % len(s.photos)
+    print "would_copy:     %d" % s.would_copy
+    print "doubles:        %d" % s.doubles
+    print "already:        %d" % s.already_in_backup
+    print "tot_size:       %dGB" % (s.tot_size/(1024*1024*1024))
+    print "skipped:        %d" % s.skipped
+    print "no exif:        %d" % s.no_exif
+    print "too small:      %d" % s.too_small
+    print "failed to open: %d" % s.failed_to_open
+    print "tags            %d" % len(s.all_tags)
+
+#    print "backup tot_photos: %d" % b.tot_photos
 
