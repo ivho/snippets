@@ -23,6 +23,9 @@
 # gdata authentication code "borrowed" from upicasa.py by Albertas Agejevas
 #
 
+# TODO: handle internal server error exceptions on create_album and inserttags as well.
+
+
 import sys
 import os
 import hashlib
@@ -281,18 +284,33 @@ class Collection(object):
 
             dprint("Inserting photo: <%s> key:<%s> on url %s" % (album_name, key, album_url))
 
-            #FIXME: gdata.photos.service.GooglePhotosException: (500, 'Internal Server Error', 'Unknown')
             if not p.dry_run:
-                photo = self.client.InsertPhotoSimple(album_url, os.path.basename(fp),
-                                                      '', # title
-                                                      fp, content_type='image/jpeg')
                 print("Uploading photo %s to album %s" % (os.path.basename(fp), album_name))
-                self.photos[key]=photo
-                photo_url = '/data/feed/api/user/%s/albumid/%s/photoid/%s' % (self.client.email, album.gphoto_id.text, photo.gphoto_id.text)
-                
-                for tag in tags:
-                    dprint("inserting tag %s" % tag)
-                    tag = self.client.InsertTag(photo_url, tag)
+                sys.stdout.flush()
+                attempt=0
+                while True:
+                    try:
+
+#                        if attempt < 3:
+#                            print "Causing internal error"
+#                            raise gdata.photos.service.GooglePhotosException({"status":500, "reason":'Internal Server Error',"body":"Unknown"})
+                        photo = self.client.InsertPhotoSimple(album_url, os.path.basename(fp),
+                                                              '', # title
+                                                              fp, content_type='image/jpeg')
+                    except gdata.photos.service.GooglePhotosException as (status, reason,body):
+                        if status==500 and reason=='Internal Server Error':
+                            print "%d: Got <%s %s %s> while instering photo, retrying in 1 sec." % (attempt, status, reason, body)
+                            time.sleep(1)
+                            attempt += 1
+                            continue
+                        raise
+
+                    self.photos[key]=photo
+                    photo_url = '/data/feed/api/user/%s/albumid/%s/photoid/%s' % (self.client.email, album.gphoto_id.text, photo.gphoto_id.text)
+                    for tag in tags:
+                        dprint("inserting tag %s" % tag)
+                        tag = self.client.InsertTag(photo_url, tag)
+                    break
             else:
                 self.photos[key]="dummy"
                 dprint("skipping - dry-run.")
