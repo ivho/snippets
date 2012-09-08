@@ -463,32 +463,40 @@ def usage():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-b", "--backup-dir", nargs=1)
-    parser.add_argument("-n", "--name", nargs=1)
-    parser.add_argument("-s", "--source-dir", nargs=1)
+    parser.add_argument("-n", "--name", nargs=1,
+                        help="Name of backup.")
     parser.add_argument("-d", "--dry-run", action="store_true")
     parser.add_argument("-v", "--verbose", action="store_true")
-    parser.add_argument("-p", "--picasa", action="store_true")
-    parser.add_argument("-x", "--delete-picasa", action="store_true")
+    parser.add_argument("-p", "--picasa", action="store_true",
+                        help="Sync with picasa, upload photos from source-dir to picasa.")
+    parser.add_argument("-x", "--delete-picasa",
+                        action="store_true",
+                        help="Delete all photos and albums from picasa.")
+    parser.add_argument("source_dir")
+
     global p
     p=parser.parse_args()
 
-    print   p.backup_dir
+    if not p.source_dir:
+        print "usage:"
+        print parser.format_help()
+        sys.exit(1)
+    print p.source_dir
 
     b=None
     if p.backup_dir:
-        print "Scanning backup..."
+        print "Scanning backup: %s" % p.backup_dir[0]
         b=Collection(p.backup_dir[0])
         b.add_photos()
         print "done."
 
-    print "Scanning source..."
-
+    print "Scanning source: %s" % p.source_dir
     try:
         name=p.name[0]
     except TypeError:
         name=None
 
-    s=Collection(p.source_dir[0], backup = b, name = name, sync_to_picasa = p.picasa)
+    s=Collection(p.source_dir, backup = b, name = name, sync_to_picasa = p.picasa)
     if p.delete_picasa:
         sys.exit(0)
 
