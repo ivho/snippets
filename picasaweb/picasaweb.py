@@ -23,6 +23,7 @@
 # Copied upicasa.py by Albertas Agejevas and renamed to picasaweb.
 #
 
+
 import os
 import sys
 import getopt
@@ -103,7 +104,7 @@ def list_albums():
 
 
 def main():
-    options, args = getopt.getopt(sys.argv[1:], "n:a:hl")
+    options, args = getopt.getopt(sys.argv[1:], "s:n:a:hl")
 
     if not options:
         return usage()
@@ -113,6 +114,9 @@ def main():
             new_album = True
             album_name = value
         elif option == "-a":
+            new_album = False
+            album_name = value
+        elif option == "-s":
             new_album = False
             album_name = value
         elif option == "-h":
