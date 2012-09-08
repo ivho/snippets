@@ -38,9 +38,17 @@ from PIL import Image
 from PIL.ExifTags import TAGS
 
 import ConfigParser
-import gdata.photos.service
-import gdata.media
-import gdata.geo
+
+try:
+    import gdata.photos.service
+    import gdata.media
+    import gdata.geo
+except ImportError as e:
+    print "Unable to import gdata libraries."
+    print " on ubuntu try:"
+    print ""
+    print "sudo apt-get install python-gdata"
+    sys.exit(1)
 
 
 HASH_BYTES=2*1024
