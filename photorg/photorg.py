@@ -218,12 +218,16 @@ class Collection(object):
         def fetch_picasa(self):
             """Fetch albums and photo info from picasa account."""
             global p
-
+            
             self.client=login()
             self.albums = self.client.GetUserFeed(user=self.client.email)
+            num_albums=0
+            num_photos=0
             for album in self.albums.entry:
                 print "%s (%s photos)" % (album.title.text, album.numphotos.text)
                 self.album_check[album.title.text] = album
+                num_albums += 1
+                num_photos += int(album.numphotos.text)
                 album.photos = self.client.GetFeed(
                     '/data/feed/api/user/%s/albumid/%s?kind=photo' % (
                         self.client.email, album.gphoto_id.text))
@@ -254,6 +258,7 @@ class Collection(object):
 #                                               photo.content.fileSize))
 #                    self.download_file(photo.content.src)
 
+            print "picasa summary: %d alubums %s photos" % (num_albums, num_photos)
 
         def add_to_picasa(self, ctime, fp, tags, prefix):
             global p
