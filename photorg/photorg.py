@@ -304,7 +304,7 @@ class Collection(object):
                                                               fp, content_type='image/jpeg')
                     except gdata.photos.service.GooglePhotosException as (status, reason,body):
                         if status==500 and reason=='Internal Server Error':
-                            print "%d: Got <%s %s %s> while instering photo, retrying in 1 sec." % (attempt, status, reason, body)
+                            print "%d: Got <%s:%s:%s> while instering photo, retrying in 1 sec." % (attempt, status, reason, body)
                             time.sleep(1)
                             attempt += 1
                             continue
@@ -320,7 +320,7 @@ class Collection(object):
                                 tag = self.client.InsertTag(photo_url, tag)
                             except gdata.photos.service.GooglePhotosException as (status, reason,body):
                                 if status==500 and reason=='Internal Server Error':
-                                    print "%d: Got <%s %s %s> while instering tag, retrying in 1 sec." % (attempt, status, reason, body)
+                                    print "%d: Got <%s:%s:%s> while instering tag, retrying in 1 sec." % (attempt, status, reason, body)
                                     time.sleep(1)
                                     attempt += 1
                                     continue
