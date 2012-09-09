@@ -23,9 +23,6 @@
 # gdata authentication code "borrowed" from upicasa.py by Albertas Agejevas
 #
 
-# TODO: handle internal server error exceptions on create_album and inserttags as well.
-
-
 import sys
 import os
 import hashlib
@@ -277,7 +274,18 @@ class Collection(object):
                 dprint("Creating album %s" % album_name)
                 if not p.dry_run:
                     album_date=calendar.timegm(ctime)*1000 # picasa want's epoc milliseconds
-                    album = self.client.InsertAlbum(title=album_name, summary="Created by photorg.py script", access='private', timestamp=str(album_date))
+                    attempt=0
+                    while True:
+                        try:
+                            album = self.client.InsertAlbum(title=album_name, summary="Created by photorg.py script", access='private', timestamp=str(album_date))
+                        except gdata.photos.service.GooglePhotosException as (status, reason,body):
+                            if status==500 and reason=='Internal Server Error':
+                                print "%d: Got <%s:%s:%s> while instering album, retrying in 1 sec." % (attempt, status, reason, body)
+                                time.sleep(1)
+                                attempt += 1
+                                continue
+                            raise
+                        break # album ok
                     self.album_check[album_name] = album
                     album_url = '/data/feed/api/user/%s/albumid/%s' % (self.client.email, album.gphoto_id.text)
                 else:
