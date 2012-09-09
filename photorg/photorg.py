@@ -206,8 +206,8 @@ class Collection(object):
         def download_photo(self, photo):
             "Download the data at URL to the current directory."
             fname=self.get_filename(photo)
-            print "Downloading %s" % (fname)
-            urllib.urlretrieve(url, "dl/" + self.fname)
+            print "Downloading %s %s" % (fname, photo.content.src)
+            urllib.urlretrieve(photo.content.src, "dl/" + fname)
 
         def unquote_recurse(self, url, max=10):
             u=urllib2.unquote(url)
@@ -234,7 +234,7 @@ class Collection(object):
                 num_albums += 1
                 num_photos += int(album.numphotos.text)
                 album.photos = self.client.GetFeed(
-                    '/data/feed/api/user/%s/albumid/%s?kind=photo' % (
+                    '/data/feed/api/user/%s/albumid/%s?kind=photo&imgmax=d' % (
                         self.client.email, album.gphoto_id.text))
                 if p.delete_picasa:
                     if self.client.email != 'ivartestimage@gmail.com':
@@ -261,7 +261,7 @@ class Collection(object):
 #                    dprint("w:%d h:%d s:%d" % (photo.content.width,
 #                                               photo.content.height,
 #                                               photo.content.fileSize))
-#                    self.download_file(photo.content.src)
+#                    self.download_photo(photo)
 
             print "picasa summary: %d alubums %s photos" % (num_albums, num_photos)
 
