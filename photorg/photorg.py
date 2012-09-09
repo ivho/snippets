@@ -309,8 +309,19 @@ class Collection(object):
                     photo_url = '/data/feed/api/user/%s/albumid/%s/photoid/%s' % (self.client.email, album.gphoto_id.text, photo.gphoto_id.text)
                     for tag in tags:
                         dprint("inserting tag %s" % tag)
-                        tag = self.client.InsertTag(photo_url, tag)
-                    break
+                        attempt=0
+                        while True:
+                            try:
+                                tag = self.client.InsertTag(photo_url, tag)
+                            except gdata.photos.service.GooglePhotosException as (status, reason,body):
+                                if status==500 and reason=='Internal Server Error':
+                                    print "%d: Got <%s %s %s> while instering tag, retrying in 1 sec." % (attempt, status, reason, body)
+                                    time.sleep(1)
+                                    attempt += 1
+                                    continue
+                                raise
+                            break # tag ok
+                    break # photo ok
             else:
                 self.photos[key]="dummy"
                 dprint("skipping - dry-run.")
