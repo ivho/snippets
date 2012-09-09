@@ -66,7 +66,7 @@ def is_photo(fname):
             return True
     return False
 
-def get_auth():
+def get_auth(section):
     """Get authentication credentials.
 
     If the ~/.config/upicasa/auth file exists, read the credentials
@@ -84,9 +84,9 @@ def get_auth():
 
         if not ans or ans[0] not in "Nn":
             config = ConfigParser.RawConfigParser()
-            config.add_section("google")
-            config.set("google", "login", email)
-            config.set("google", "password", password)
+            config.add_section(section)
+            config.set(section, "login", email)
+            config.set(section, "password", password)
 
             if not os.path.isdir(config_dir):
                 os.makedirs(config_dir)
@@ -96,16 +96,23 @@ def get_auth():
     else:
         config = ConfigParser.RawConfigParser()
         config.read(password_path)
-        email = config.get("google", "login")
-        password = config.get("google", "password")
+        email = config.get(section, "login")
+        password = config.get(section, "password")
+    print(email)
+
     return email, password
 
-def login():
+def login(is_debug):
     """Log into PicasaWeb.
 
     Returns a PhotosService client instance.
     """
-    username, password = get_auth()
+    if is_debug:
+        print("is debug")
+        section="google-debug"
+    else:
+        section="google"
+    username, password = get_auth(section)
     client = gdata.photos.service.PhotosService()
     client.email = username
     client.password = password
@@ -193,6 +200,7 @@ class Collection(object):
             self.albums = None
             self.photos = {}
             self.album_check = {}
+            self.debug = p.debug
             self.fetch_picasa()
 
         def download_photo(self, photo):
@@ -215,8 +223,8 @@ class Collection(object):
         def fetch_picasa(self):
             """Fetch albums and photo info from picasa account."""
             global p
-            
-            self.client=login()
+
+            self.client=login(self.debug)
             self.albums = self.client.GetUserFeed(user=self.client.email)
             num_albums=0
             num_photos=0
@@ -519,6 +527,8 @@ if __name__ == "__main__":
     parser.add_argument("-v", "--verbose", action="store_true")
     parser.add_argument("-p", "--picasa", action="store_true",
                         help="Sync with picasa, upload photos from source-dir to picasa.")
+    parser.add_argument("-D", "--debug", action="store_true",
+                        help="Use \"google-debug\" section in the auth file when logging in to picasa.")
     parser.add_argument("-x", "--delete-picasa",
                         action="store_true",
                         help="Delete all photos and albums from picasa.")
