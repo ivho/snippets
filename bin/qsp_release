@@ -13,18 +13,19 @@ mkdir -p $tmpdir
 
 if [ $(hostname) == "nobu" ] ; then
    builddir=/space/work/simics/qsp/release_build/
+   simics_install=/space/work/simics/qsp/install/simics-4.6.39
 else
    builddir=/opt/$USER/qsp/release
+   simics_install=/opt/iholmqvi/qsp/install/simics-4.6.46
 fi
 
 SVN_BRANCH=4.6_swe-wri9722
 SVN_BASE=http://ala-svn.wrs.com/svn/Simics/simics/branches
 svn cat $SVN_BASE/$SVN_BRANCH/scripts/qsp/create_qsp_release.sh > $tmpdir/create_qsp_release.sh
+#echo "WARNING - not using SVN version of create_qsp_release.sh"
+#cp /opt/iholmqvi/Simics/scripts/qsp/create_qsp_release.sh $tmpdir/create_qsp_release.sh
 chmod 755 $tmpdir/create_qsp_release.sh
 
-
-#simics_install=/tmp/lastest/simics-4.6.37
-simics_install=/space/work/simics/qsp/install/simics-4.6.39
 
 echo "Removing old build/tmp dir"
 rm -rf $builddir/tmp
