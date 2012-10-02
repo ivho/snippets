@@ -1,0 +1,38 @@
+#!/bin/bash
+
+SVN=$1
+DST=$2
+
+function usage {
+    echo "usage: $0 <svn_url> <dst_dir>"
+    exit 1
+}
+
+if [ -z $DST ] ; then
+   usage
+fi
+
+set -o errexit
+set -o nounset
+
+if [ -d $DST ] ; then
+    echo "$DST alrady exists"
+    exit 1
+fi
+
+
+mkdir -p $DST
+svnadmin create $DST
+
+HOOK=$DST/hooks/pre-revprop-change
+cat > $HOOK  <<EOF
+#!/bin/sh
+exit 0;
+EOF
+chmod 755 $HOOK
+
+svnsync init file://$DST $SVN
+svnsync sync file://$DST
+
+
+
