@@ -21,9 +21,15 @@ fi
 
 SVN_BRANCH=4.6_swe-wri9722
 SVN_BASE=http://ala-svn.wrs.com/svn/Simics/simics/branches
-svn cat $SVN_BASE/$SVN_BRANCH/scripts/qsp/create_qsp_release.sh > $tmpdir/create_qsp_release.sh
-#echo "WARNING - not using SVN version of create_qsp_release.sh"
-#cp /opt/iholmqvi/Simics/scripts/qsp/create_qsp_release.sh $tmpdir/create_qsp_release.sh
+if [ -z $DONT_VALIDATE_MYSELF ]; then
+    svn cat $SVN_BASE/$SVN_BRANCH/scripts/qsp/create_qsp_release.sh > $tmpdir/create_qsp_release.sh
+else
+    echo "WARNING - not using SVN version of create_qsp_release.sh"
+    echo " press <return> to acknowledge that this should be be used to build proper images."
+    echo " this mode is intended for debugging the create_qsp_release.sh script only."
+    read
+    cp /opt/iholmqvi/Simics/scripts/qsp/create_qsp_release.sh $tmpdir/create_qsp_release.sh
+fi
 chmod 755 $tmpdir/create_qsp_release.sh
 
 
