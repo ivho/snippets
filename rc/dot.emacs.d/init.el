@@ -73,18 +73,32 @@
       (append '(("\\.dml$" . dml-mode)
 		) auto-mode-alist))
 
+(setq auto-mode-alist
+      (cons '("linux.*\\.c$" . linux-c-mode)
+	    auto-mode-alist))
+
 (setq show-trailing-whitespace t)
 
+(put 'upcase-region 'disabled nil)
 
-    
-(defun gker-setup-sh-mode ()
-  "My own personal preferences for `sh-mode'.
-
-This is a custom function that sets up the parameters I usually
-prefer for `sh-mode'.  It is automatically added to
-`sh-mode-hook', but is can also be called interactively."
+(defun simics-script-mode ()
+  "simics script mode."
   (interactive)
-  (setq sh-basic-offset 8
-        sh-indentation 8))
-(add-hook 'sh-mode-hook 'gker-setup-sh-mode)
+  (setq tab-width 4)
+  (setq show-trailing-whitespace t)
+  (setq c-basic-offset 4)
+  (setq indent-tabs-mode nil)
+  (setq c-indentation 4))
+
+(add-hook 'c-mode-hook 'simics-script-mode)
+
+(setq auto-mode-alist
+      (cons '("\\.simics$" . simics-script-mode)
+	    auto-mode-alist))
+
+(setq auto-mode-alist
+      (cons '("\\.include$" . simics-script-mode)
+	    auto-mode-alist))
+
+
 (put 'upcase-region 'disabled nil)
