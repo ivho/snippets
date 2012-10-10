@@ -15,8 +15,11 @@ fi
 HOSTNAME=svetsen
 FQHN=${HOSTNAME}.homeip.net
 
-if [ $HOSTNAME != $(hostname) ] ; then
-    ssh ivho@${FQHN} $(basename $0) ${REPO_NAME}
+if [$(hostname) != "htpc" ] ; then
+    echo "ssh.."
+    echo ssh ivho@${FQHN} $(basename $0) ${REPO_NAME}
+    echo "done."
+    exit 0
 fi
 
 REPO_BASE=/home/ivho/testing
