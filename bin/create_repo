@@ -1,0 +1,40 @@
+#!/bin/sh
+set -o errexit
+
+REMOTE_NAME=$2
+if [ -z $1 ]; then
+    echo "usage: $0 <repo-name> [remote-name]"
+    exit 1
+fi
+set -o nounset
+REPO_NAME=$1
+if [ -z ${REMOTE_NAME} ] ; then
+    REMOTE_NAME=origin
+fi
+
+HOSTNAME=svetsen
+FQHN=${HOSTNAME}.homeip.net
+
+if [ $HOSTNAME != $(hostname) ] ; then
+    ssh ivho@${FQHN} $0 ${REPO_NAME}
+fi
+
+REPO_BASE=/home/ivho/testing
+if [ ! -d ${REPO_BASE} ] ; then
+    echo "${REPO_BASE} is not a directory."
+    exit 1
+fi
+
+#REPO_BASE=/folk/iholmqvi/testing
+cd $REPO_BASE
+
+REPO_DIR=${REPO_BASE}/${REPO_NAME}.git
+if [ -d ${REPO_BASE} ] ; then
+    echo "${REPO_BASE} already exists."
+    exit 1
+fi
+
+mkdir ${REPO_DIR}
+git init --bare ${REPO_DIR}
+
+echo "git remote add ivho@${REMOTE_NAME} ${FQHN}:${REPO_BASE}"
