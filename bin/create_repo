@@ -40,4 +40,4 @@ fi
 mkdir ${REPO_DIR}
 git init --bare ${REPO_DIR}
 
-echo "git remote add ${REMOTE_NAME} ivho@${FQHN}:${REPO_DIR}"
+echo "git remote add ${REMOTE_NAME} ssh://ivho@${FQHN}:${REPO_DIR}"
