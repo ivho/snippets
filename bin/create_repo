@@ -16,7 +16,7 @@ HOSTNAME=svetsen
 FQHN=${HOSTNAME}.homeip.net
 
 if [ $HOSTNAME != $(hostname) ] ; then
-    ssh ivho@${FQHN} $0 ${REPO_NAME}
+    ssh ivho@${FQHN} $(basename $0) ${REPO_NAME}
 fi
 
 REPO_BASE=/home/ivho/testing
