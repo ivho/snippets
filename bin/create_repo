@@ -17,7 +17,7 @@ FQHN=${HOSTNAME}.homeip.net
 
 if [ $(hostname) != "htpc" ] ; then
     echo "ssh.."
-    echo ssh ivho@${FQHN} $(basename $0) ${REPO_NAME}
+    ssh ivho@${FQHN} /home/ivho/bin/create_repo ${REPO_NAME}
     echo "done."
     exit 0
 fi
@@ -32,8 +32,8 @@ fi
 cd $REPO_BASE
 
 REPO_DIR=${REPO_BASE}/${REPO_NAME}.git
-if [ -d ${REPO_BASE} ] ; then
-    echo "${REPO_BASE} already exists."
+if [ -d ${REPO_DIR} ] ; then
+    echo "${REPO_DIR} already exists."
     exit 1
 fi
 
