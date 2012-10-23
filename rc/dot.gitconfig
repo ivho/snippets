@@ -8,3 +8,4 @@
     lol = log --graph --decorate --pretty=oneline --abbrev-commit
     lola = log --graph --decorate --pretty=oneline --abbrev-commit --all
     dc = diff --cached
+    unpushed = log --branches --not --remotes
