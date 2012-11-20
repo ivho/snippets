@@ -16,7 +16,7 @@ if [ $(hostname) == "nobu" ] ; then
    simics_install=/space/work/simics/qsp/install/simics-4.6.39
 else
    builddir=/opt/$USER/qsp/release
-   simics_install=/opt/iholmqvi/qsp/install/simics-4.6.46
+   simics_install=/opt/iholmqvi/qsp/install2/simics-4.6.58
 fi
 
 SVN_BRANCH=4.6_swe-wri9722
@@ -35,6 +35,8 @@ chmod 755 $tmpdir/create_qsp_release.sh
 
 echo "Removing old build/tmp dir"
 rm -rf $builddir/tmp
+echo "Removing sstate for <build-dir>/sstate/sstate-linux-windriver-qsp*"
+rm -f $builddir/sstate/sstate-linux-windriver-qsp*
 
 echo "Starting tmp:$tmpdir build:$builddir"
 echo "to check logfile:"
