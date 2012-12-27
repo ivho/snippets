@@ -1,0 +1,70 @@
+#!/bin/bash
+set -o errexit
+set -o nounset
+TMPDIR=$1
+REPO=$2
+SVNCONAME=test.svn
+
+function create_file {
+   f=$1
+   c=$2
+   if [ ! -d $(dirname $f) ] ; then
+       echo "create dir $(dirname $f) $f"
+       svn mkdir --parents $(dirname $f)
+   fi
+   if [ -f $f ]; then
+       echo $c > $f
+   else
+       echo $c > $f
+       svn add $f
+   fi
+}
+
+function bin_file {
+   f=$1
+   if [ ! -d $(dirname $f) ] ; then
+       echo "create dir $(dirname $f) $f"
+       svn mkdir --parents $(dirname $f)
+   fi
+   if [ -f $f ]; then
+      cp /bin/ls $f
+      python /home/ivho/proj/snippets/git/r.py >> $f
+   else
+      cp /bin/ls $f
+      python /home/ivho/proj/snippets/git/r.py >> $f
+      svn add $f
+   fi
+}
+
+function commit {
+    svn commit -m "$1"
+}
+
+function branch {
+    nb=$1
+    svn cp -m "branching to $nb" file://$TMPDIR/$REPO/trunk file://$TMPDIR/$REPO/branches/$nb
+}
+function switch {
+    nb=$1
+    svn switch file://$TMPDIR/$REPO/$nb
+}
+
+rm -rf $TMPDIR/$SVNCONAME
+svn co file://$TMPDIR/$REPO/trunk $TMPDIR/$SVNCONAME
+
+cd $TMPDIR/$SVNCONAME
+
+create_file test/a "testing a"
+create_file test/b "testing b"
+commit "creating a b"
+bin_file target/x/images/test
+bin_file target/x/images/test2
+commit "creating bin test test2"
+branch b1
+bin_file target/x/images/test2
+commit "test2 in trunk"
+switch branches/b1
+bin_file target/x/immages/test3
+commit "test3 in b1"
+switch trunk
+

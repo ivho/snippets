@@ -1,0 +1,9 @@
+#!/bin/bash
+TMPDIR=$1
+
+cd $TMPDIR/test.git
+git filter-branch \
+     --tree-filter '/home/ivho/proj/snippets/git/apply tree' \
+     -- --all
+
+#     --env-filter '/home/ivho/proj/snippets/git/apply env' \

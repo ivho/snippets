@@ -1,0 +1,19 @@
+#!/bin/sh
+DIR=$1
+if [ -z "$DIR" -o -d $DIR ] ; then
+   echo "usage: $0 <dir>"
+   exit 1
+fi
+
+mkdir -p $DIR
+svnadmin create $DIR
+cat > $DIR/hooks/pre-revprop-change  <<EOF
+#!/bin/sh
+exit 0;
+EOF
+chmod +x $DIR/hooks/pre-revprop-change
+svn mkdir -m "creating trunk" file:///$DIR/trunk
+svn mkdir -m "creating branches" file:///$DIR/branches
+svn mkdir -m "creating tags" file:///$DIR/tags
+
+echo "svn co file:///$DIR"
