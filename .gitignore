@@ -2,3 +2,7 @@
 .#*
 \#*#
 *.pyc
+codejam/*.in
+2codejam/*.out
+rc/dot.emacs.d/session.*
+
