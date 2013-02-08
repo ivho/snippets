@@ -1,0 +1,10 @@
+#!/bin/bash
+PORT=$1
+if [ -z $PORT ] ; then
+   PORT=9000
+fi
+while true ; do
+      telnet localhost $PORT
+      echo "sleep 0.3 waiting for port $PORT"
+      sleep 0.3
+done
