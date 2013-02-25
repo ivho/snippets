@@ -7,17 +7,18 @@ import os
 import shutil
 import stat
 
+IMG_URL="file:///space/work/simics/img_test/img_repo/"
+
 PLACEHOLDER_SUFFIX = ".simimg"
 
 def log(msg):
     print "=== ", msg
 
 def cmd(cmd):
-    log(" === command <%s>" % cmd)
-    r = subprocess.call(cmd, shell = True)
-    if r != 0:
-        log("cmd <%s> failed" % cmd)
-    return r
+    log(" *** command <%s>" % cmd)
+    x=subprocess.check_output(cmd, shell = True, stderr=subprocess.STDOUT)
+    print "  == returns: ", x,
+    print "  == done"
 
 def svn_add_file(path):
     return cmd("svn add %s" % path)
@@ -42,7 +43,10 @@ def get_hash(path):
     s.update(file(path).read())
     return s.hexdigest()
 
-def create_img(o, path, src_img_path = None, ):
+def create_img(o, path, src_img_path = None, replace = False):
+
+    img_added = False
+
     if not src_img_path:
         src_img_path = path
 
@@ -50,7 +54,7 @@ def create_img(o, path, src_img_path = None, ):
     # to avoid an unclean svn status as much as possible
     # in case we need to abort.
     placeholder_path = path+PLACEHOLDER_SUFFIX
-    if os.path.exists(placeholder_path):
+    if not replace and os.path.exists(placeholder_path):
         print "FATAL ERROR: %s already exists." % placeholder_path
         sys.exit(1)
 
@@ -62,20 +66,41 @@ def create_img(o, path, src_img_path = None, ):
     dirname = hash[:2]
     fname = hash[2:]
 
-    # Create the file in img repo with hash based name
+    # Create the file in img repo wisth hash based name
     img_dir = os.path.join(o.repo, dirname)
     img_path = os.path.join(img_dir, fname)
-    svn_mkdir(img_dir)
-    log("move %s -> %s" % (path, src_img_path))
-    shutil.move(src_img_path, img_path)
-    svn_add_file(img_path)
+    img_commit = [] # remember whats been added until it's time to commit
+    cmd("svn up --depth empty %s" % img_dir)
+    if not os.path.exists(img_dir):
+        svn_mkdir(img_dir)
+        img_commit.append(img_dir)
+
+    cmd("svn up --depth empty %s" % img_path)
+    if not os.path.exists(img_path):
+        log("move %s -> %s" % (src_img_path, img_path))
+        shutil.move(src_img_path, img_path)
+        svn_add_file(img_path)
+        img_commit.append(img_path)
+    # Make img file read only, since we wan't
+    # to avoid accidental local overwrites since we
+    # now have a symlink pointing to it.
+    # This is not fool-proof and there should also
+    # be a commit hook preventing this from happening
+    # on the main server image repo.
+        os.chmod(img_path, stat.S_IRUSR | stat.S_IROTH | stat.S_IRGRP)
+    else:
+        log("Image alread available in img_repo")
+        # remove original so we can create the symlink
+        os.remove(path)
 
     # Create the placeholder file containg the hash
-
+    log("create place holder")
     hash_placeholder = file(placeholder_path, "w")
     hash_placeholder.write(hash)
     hash_placeholder.close()
-    svn_add_file(placeholder_path)
+    if not replace:
+        svn_add_file(placeholder_path)
+
 
     # Create the local symlink pointing to the img_repo version
     # FIXME: Need a WIN32 version of this!!!!
@@ -83,30 +108,30 @@ def create_img(o, path, src_img_path = None, ):
     local_img_dir = os.path.dirname(path)
 
     # Add the symlink to svn:ignore
-    cmd = "svn propget svn:ignore \"%s\"" % local_img_dir
-    ignore = subprocess.check_output(cmd, shell = True)
+    do_ignore = True
+    icmd = "svn propget svn:ignore \"%s\"" % local_img_dir
+    ignore = subprocess.check_output(icmd, shell = True)
     for x in ignore.split("\n"):
-        print "pre-ign:<%s>" % x
-    ignore += os.path.basename(path)
-    for x in ignore.split("\n"):
-        print "post-ign:<%s>" % x
-    cmd = "svn propset svn:ignore \"%s\" \"%s\"" % (ignore, local_img_dir)
-    ignore = subprocess.check_output(cmd, shell = True)
+        if x == ignore:
+            log("already ignored <%s> == <%s>." % (x, path))
+            do_ignore = False
 
-    # commit the result
-    # I'd really like to do this atomically
-    # but I guess it's not possible?
+    if do_ignore:
+        ignore += os.path.basename(path)
+        for x in ignore.split("\n"):
+            log("post-ign:<%s>" % x)
+        icmd = "svn propset svn:ignore \"%s\" \"%s\"" % (ignore, local_img_dir)
+        ignore = subprocess.check_output(icmd, shell = True)
+
+    # commit the result (i.e the placeholder and the svn:ignore property
+    # changes on the directory and possibly the image data)
     svn_commit("add image <%s>" % path, [placeholder_path, local_img_dir])
     # and finally commit the image data
-    svn_commit("add image data <%s>" % path, [img_dir, img_path])
-
-    # Make img file read only, since we wan't
-    # to avoid accidental local overwrites since we
-    # now have a symlink pointing to it.
-    # This is not fool-proof and there should also
-    # be a commit hook preventing this from happening
-    # on the main server image repo.
-    os.chmod(img_path, stat.S_IRUSR | stat.S_IROTH | stat.S_IRGRP)
+    if len(img_commit) != 0:
+        # I'd really like to do this atomically with the previous commit
+        # but I guess it's not possible since it's a different
+        # checkout directory.
+        svn_commit("add image data <%s>" % path, img_commit)
 
 
 def set_repo(repo):
@@ -122,7 +147,7 @@ def add_images(o, images):
 def replace_image(o):
     print o.replace
     print o.src
-    add
+    create_img(o, o.replace, o.src, replace = True)
 
 # Intended for the initial extermination of the images
 # present in the SVN repo.
@@ -225,6 +250,25 @@ def main():
     if o.update:
         update_links()
 
+def findsha(dirname, instance = 0):
+    y = 0
+    i = 0
+    while True:
+        x=file("/tmp/kalle", "w")
+        x.write("abcd%d" % y)
+        x.close()
+        z = get_hash("/tmp/kalle")
+        if (z[:2] == dirname):
+            if i == instance:
+                print("/tmp/kalle (abcd%d) is now sha1<%s>" % (y, z))
+                return
+            i += 1
+        y += 1
+
 if __name__ == '__main__':
 #    test()
     main()
+#    findsha("95")
+#    findsha("95", instance = 1)
+
+
