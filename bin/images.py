@@ -12,28 +12,29 @@ PLACEHOLDER_SUFFIX = ".simimg"
 def log(msg):
     print "=== ", msg
 
-def svn_cmd(cmd):
-    log(" === svn command <%s>" % cmd)
+def cmd(cmd):
+    log(" === command <%s>" % cmd)
     r = subprocess.call(cmd, shell = True)
     if r != 0:
-        log("svn cmd <%s> failed" % cmd)
+        log("cmd <%s> failed" % cmd)
     return r
 
 def svn_add_file(path):
-    return svn_cmd("svn add %s" % path)
+    return cmd("svn add %s" % path)
 
 def svn_mkdir(dirname):
-    return svn_cmd("svn mkdir %s" % dirname)
-    r = subprocess.call("svn mkdir %s" % dirname)
+    return cmd("svn mkdir %s" % dirname)
 
 def svn_commit(msg, paths):
     if type(paths) == type([]):
         args = " ".join(paths)
     else:
         args = paths
-    cmd = "svn commit -m \"%s\" --depth empty %s" % (msg, args)
-#    print "skipping commit cmd <%s>" % cmd
-    return svn_cmd(cmd)
+    svncmd = "svn commit -m \"%s\" --depth empty %s" % (msg, args)
+    for p in paths:
+        cmd("svn up %s" % p)
+#    print "skipping commit cmd <%s>" % svncmd
+    return cmd(svncmd)
 
 def get_hash(path):
     log("get hash for <%s>" % path)
@@ -48,6 +49,15 @@ def create_img(o, path, src_img_path = None):
         replace = True
         src_img_path = path
 
+    # Check for errors as early as possible
+    # to avoid an unclean svn status as much as possible
+    # in case we need to abort.
+    placeholder_path = path+PLACEHOLDER_SUFFIX
+    if os.path.exists(placeholder_path):
+        print "FATAL ERROR: %s already exists." % placeholder_path
+        sys.exit(1)
+
+
     # Get the hash of the file used for archiving
     # and split it into git-like structure.
     # xx/yyyyyyyyyyy
@@ -59,21 +69,22 @@ def create_img(o, path, src_img_path = None):
     img_dir = os.path.join(o.repo, dirname)
     img_path = os.path.join(img_dir, fname)
     svn_mkdir(img_dir)
-    shutil.move(path, img_path)
+    log("move %s -> %s" % (path, src_img_path))
+    shutil.move(src_img_path, img_path)
     svn_add_file(img_path)
 
     # Create the placeholder file containg the hash
-    placeholder_path = path+PLACEHOLDER_SUFFIX
+
     hash_placeholder = file(placeholder_path, "w")
     hash_placeholder.write(hash)
     hash_placeholder.close()
     svn_add_file(placeholder_path)
 
+#    if replace:
+#        os.remove(path)
+
     # Create the local symlink pointing to the img_repo version
     # FIXME: Need a WIN32 version of this!!!!
-    if replace:
-        shutil.remove(path)
-
     os.symlink(img_path, path)
     local_img_dir = os.path.dirname(path)
 
@@ -93,7 +104,7 @@ def create_img(o, path, src_img_path = None):
     # but I guess it's not possible?
     svn_commit("add image <%s>" % path, [placeholder_path, local_img_dir])
     # and finally commit the image data
-    svn_commit("add image data <%s>" % path, img_path)
+    svn_commit("add image data <%s>" % path, [img_dir, img_path])
 
     # Make img file read only, since we wan't
     # to avoid accidental local overwrites since we
@@ -112,11 +123,33 @@ def add_images(o, images):
         print 'Add image \"%s\"' % image
         create_img(o, image)
 
+# replace image for an image that's already been
+# added with this script
 def replace_image(o):
     print o.replace
     print o.src
-    
-    
+
+# Intended for the initial extermination of the images
+# present in the SVN repo.
+def fix_old_image(o):
+    log("fix old image:")
+    print o.fix
+
+    # Find a free tmp name for this file in the same dir
+    tmp = 0
+    while True:
+        tmpnam = "%s.%d" % (o.fix, tmp)
+        if not os.path.exists(tmpnam):
+            break
+        tmp += 1
+
+    # make a copy of the image and remove the svn version
+    cmd("cp %s %s" % (o.fix, tmpnam))
+    cmd("svn rm %s" % o.fix)
+    svn_commit("fix old svn image <%s>" % o.fix, [o.fix, os.path.dirname(o.fix)])
+
+    # Now it's just a normal create_img()
+    create_img(o, o.fix, tmpnam)
 
 def update_links():
         print 'Update links.'
@@ -158,6 +191,12 @@ def main():
         action = 'store_true',
         help = 'Update image links.')
 
+    parser.add_option(
+        '--fix',
+        dest = 'fix',
+        action = 'store',
+        help = 'Fix existing image.')
+
     (o, args) = parser.parse_args()
 
 #    if not args:
@@ -181,6 +220,9 @@ def main():
 
 #    if o.repo:
 #        set_repo(o.repo[0])
+    if o.fix:
+        fix_old_image(o)
+
     if o.add:
         add_images(o, o.add)
 
