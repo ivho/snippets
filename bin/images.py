@@ -42,11 +42,8 @@ def get_hash(path):
     s.update(file(path).read())
     return s.hexdigest()
 
-def create_img(o, path, src_img_path = None):
-
-    replace = False
+def create_img(o, path, src_img_path = None, ):
     if not src_img_path:
-        replace = True
         src_img_path = path
 
     # Check for errors as early as possible
@@ -79,9 +76,6 @@ def create_img(o, path, src_img_path = None):
     hash_placeholder.write(hash)
     hash_placeholder.close()
     svn_add_file(placeholder_path)
-
-#    if replace:
-#        os.remove(path)
 
     # Create the local symlink pointing to the img_repo version
     # FIXME: Need a WIN32 version of this!!!!
@@ -128,12 +122,12 @@ def add_images(o, images):
 def replace_image(o):
     print o.replace
     print o.src
+    add
 
 # Intended for the initial extermination of the images
 # present in the SVN repo.
 def fix_old_image(o):
     log("fix old image:")
-    print o.fix
 
     # Find a free tmp name for this file in the same dir
     tmp = 0
