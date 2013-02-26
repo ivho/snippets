@@ -7,21 +7,28 @@ import os
 import shutil
 import stat
 
+#TODO: fix space in path issues.
+
 IMG_URL="file:///space/work/simics/img_test/img_repo/"
 
 PLACEHOLDER_SUFFIX = ".simimg"
+HASH_LEN=40
 
 def log(msg):
-    print "=== ", msg
+#    print "=== ", msg
+    pass
 
 def cmd(cmd):
     log(" *** command <%s>" % cmd)
     x=subprocess.check_output(cmd, shell = True, stderr=subprocess.STDOUT)
-    print "  == returns: ", x,
-    print "  == done"
+    log("  == returns: <<%s>>" % x)
+    return x
 
 def svn_add_file(path):
     return cmd("svn add %s" % path)
+
+def svn_rm_file(path):
+    return cmd("svn rm %s" % path)
 
 def svn_mkdir(dirname):
     return cmd("svn mkdir %s" % dirname)
@@ -144,14 +151,14 @@ def set_repo(repo):
 
 def add_images(o, images):
     for image in images:
-        print 'Add image \"%s\"' % image
+        if not is_svn_file(image):
+            error("%s is not a svn controlled file\n" % image)
+        log('Add image \"%s\"' % image)
         create_img(o, image)
 
 # replace image for an image that's already been
 # added with this script
 def replace_image(o):
-    print o.replace
-    print o.src
     create_img(o, o.replace, o.src, replace = True)
 
 # Intended for the initial extermination of the images
@@ -178,8 +185,52 @@ def fix_old_image(o):
     # cleanup the tmpfile
     os.remove(tmpnam)
 
-def update_links():
-        print 'Update links.'
+def remove_image(o):
+    for path in o.remove:
+        is_svn_file(path+PLACEHOLDER_SUFFIX)
+        is_symlink(path)
+        os.remove(path)
+        svn_rm_file(path+PLACEHOLDER_SUFFIX)
+        svn_commit("remove image reference for <%s>" % path,
+                   [path+PLACEHOLDER_SUFFIX])
+
+def update_link(o, dirname, fname):
+    path=os.path.join(dirname, fname)
+    linkpath = path[:len(path)-len(PLACEHOLDER_SUFFIX)]
+    print "update %s (%s)" % (linkpath, path)
+
+    hash=file(path).read()
+    if len(hash) != HASH_LEN:
+        error("%s does not contain valid hash." % path)
+
+    if not is_svn_file(path):
+        error("%s is not a subversion controlled file.\n" % path)
+
+    img_dir = os.path.join(o.repo, hash[:2])
+    img_path = os.path.join(img_dir, hash[2:])
+
+    if not is_svn_file(img_path):
+        print "updating for %s" % img_path
+        cmd("svn up --depth empty %s" % img_dir)
+        cmd("svn up --depth empty %s" % img_path)
+        if not is_svn_file(img_path):
+            error("Failed to find image data for %s\n hash:%s\nimg_path:%s\n" %
+                  (linkpath, hash, img_path))
+
+    if not is_symlink(linkpath):
+        error("%s is not a symlink.\n" % linkpath)
+    os.remove(linkpath)
+    os.symlink(img_path, linkpath)
+
+
+def update_links(o):
+    for svndir in o.update:
+        for (path, dirs, files) in os.walk(svndir):
+            if '.svn' in dirs:
+                dirs.remove('.svn')
+            for f in files:
+                if f.endswith(PLACEHOLDER_SUFFIX):
+                    update_link(o, path, f)
 
 def usage(argv):
     print "usage: %s --repo=<repo-root> --add=<path-to-image> --update-links[=<directory-to-update>" % argv[0]
@@ -196,7 +247,13 @@ def main():
         '--add',
         dest = 'add',
         action = 'append',
-        help = 'Add image to image repository.'
+        help = 'Add image to image repository and a reference in src repo.'
+        )
+    parser.add_option(
+        '--remove',
+        dest = 'remove',
+        action = 'append',
+        help = 'Remove reference to image in src repo.'
         )
     parser.add_option(
         '--replace',
@@ -215,8 +272,8 @@ def main():
     parser.add_option(
         '--update',
         dest = 'update',
-        action = 'store_true',
-        help = 'Update image links.')
+        action = 'append',
+        help = 'Update image links in directory.')
 
     parser.add_option(
         '--fix',
@@ -248,8 +305,12 @@ def main():
 
     if o.replace:
         replace_image(o)
+
+    if o.remove:
+        remove_image(o)
+
     if o.update:
-        update_links()
+        update_links(o)
 
 def findsha(dirname, instance = 0):
     y = 0
