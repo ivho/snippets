@@ -164,10 +164,10 @@ def create_img(o, path, src_img_path = None, replace = False):
 def set_repo(repo):
     print 'Set repo to \"%s\".' % repo
 
-def add_images(o, images):
-    for image in images:
-        if not is_svn_file(image):
-            error("%s is not a svn controlled file\n" % image)
+def add_images(o):
+    for image in o.add:
+#        if not is_svn_file(image):
+#            error("%s is not a svn controlled file\n" % image)
         log('Add image \"%s\"' % image)
         create_img(o, image)
 
@@ -257,23 +257,28 @@ def main():
         '--repo',
         dest = 'repo',
         action = 'store',
+        metavar = '<img-repo-dir>',
         help = 'Set the path to the image repository.')
+
     parser.add_option(
         '--add',
         dest = 'add',
         action = 'append',
+        metavar = '<unversioned-image-file>',
         help = 'Add image to image repository and a reference in src repo.'
         )
     parser.add_option(
         '--remove',
         dest = 'remove',
         action = 'append',
+        metavar = '<versioned-image-file>',
         help = 'Remove reference to image in src repo.'
         )
     parser.add_option(
         '--replace',
         dest = 'replace',
         action = 'store',
+        metavar = '<versioned-image-file>',
         help = 'Replace image.'
         )
 
@@ -281,20 +286,23 @@ def main():
         '--src',
         dest = 'src',
         action = 'store',
-        help = 'Replace image.'
+        metavar = '<unversioned-image-file>',
+        help = 'New image to replace.'
         )
 
     parser.add_option(
         '--update',
         dest = 'update',
         action = 'append',
+        metavar = '<directoy>',
         help = 'Update image links in directory.')
 
     parser.add_option(
         '--fix',
         dest = 'fix',
         action = 'store',
-        help = 'Fix existing image.')
+        metavar = '<old-svn-image>',
+        help = 'Fix existing image. Should only be used during initial repo conversion.')
 
     (o, args) = parser.parse_args()
 
@@ -310,13 +318,11 @@ def main():
         sys.stdout.write('Nothing to do.\n')
         sys.exit(0)
 
-#    if o.repo:
-#        set_repo(o.repo[0])
     if o.fix:
         fix_old_image(o)
 
     if o.add:
-        add_images(o, o.add)
+        add_images(o)
 
     if o.replace:
         replace_image(o)
