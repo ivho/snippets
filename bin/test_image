@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 REPO=/space/work/simics/img_test/co/img_repo/
 echo testing
@@ -7,30 +7,49 @@ rm -rf co img_repo src_repo
 tar xf img_test.tar
 cd co/src_repo
 
+function check_status {
+    pwd
+    if [ "$(svn status)" != "" ] ; then
+	echo "Non-zero svn status."
+	exit 1
+    fi
+    echo "status ok."
+}
+
+check_status
+
 echo "**** FIX ls"
 python ~/bin/images.py --repo $REPO --fix ./targets/tgt-simple/images/ls
+check_status
 
+echo
 echo "**** add pidof"
 cp /bin/pidof /space/work/simics/img_test/co/src_repo/targets/tgt-simple/images/pidof
 python ~/bin/images.py --repo $REPO --add ./targets/tgt-simple/images/pidof
+check_status
 
-
-echo "**** update pidof"
+echo
+echo "**** replace pidof"
 cp /bin/pidof /tmp/pidof2
 echo aa >> /tmp/pidof2
 python ~/bin/images.py --repo $REPO --replace ./targets/tgt-simple/images/pidof --src /tmp/pidof2
+check_status
 
-
+echo
 echo "*** add collision on dirname 95/"
 echo -n abcd234 > ./targets/tgt-simple/images/collision
 python ~/bin/images.py --repo $REPO --add ./targets/tgt-simple/images/collision
+check_status
 
+echo
 echo "*** replace collision on dirname 95/"
 rm -f /tmp/collision
 echo -n abcd295 > /tmp/collision
 python ~/bin/images.py --repo $REPO --replace ./targets/tgt-simple/images/collision --src /tmp/collision
+check_status
 
-
+echo
 echo "**** add pidof again with different name"
 cp /bin/pidof /space/work/simics/img_test/co/src_repo/targets/tgt-simple/images/pidof2
 python ~/bin/images.py --repo $REPO --add ./targets/tgt-simple/images/pidof2
+check_status
