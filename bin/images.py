@@ -90,7 +90,11 @@ def create_img(o, path, src_img_path = None, replace = False):
         os.chmod(img_path, stat.S_IRUSR | stat.S_IROTH | stat.S_IRGRP)
     else:
         log("Image alread available in img_repo")
-        # remove original so we can create the symlink
+
+    # remove original so we can create the symlink
+    # (already removed if this is --fix)
+    if os.path.exists(path):
+        log("remove original path <%s>" % path)
         os.remove(path)
 
     # Create the placeholder file containg the hash
@@ -104,6 +108,7 @@ def create_img(o, path, src_img_path = None, replace = False):
 
     # Create the local symlink pointing to the img_repo version
     # FIXME: Need a WIN32 version of this!!!!
+    log("symlink: %s %s" % (img_path, path))
     os.symlink(img_path, path)
     local_img_dir = os.path.dirname(path)
 
@@ -112,7 +117,7 @@ def create_img(o, path, src_img_path = None, replace = False):
     icmd = "svn propget svn:ignore \"%s\"" % local_img_dir
     ignore = subprocess.check_output(icmd, shell = True)
     for x in ignore.split("\n"):
-        if x == ignore:
+        if x == path:
             log("already ignored <%s> == <%s>." % (x, path))
             do_ignore = False
 
@@ -217,13 +222,6 @@ def main():
         help = 'Fix existing image.')
 
     (o, args) = parser.parse_args()
-
-#    if not args:
-#        usage(sys.argv)
-
-    print "o:", o
-    print "args:", args
-#    sys.exit(1)
 
     if len(args) > 0:
         sys.stderr.write('Error: Unexpected non-option arguments.\n')
