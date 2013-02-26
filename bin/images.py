@@ -175,6 +175,9 @@ def fix_old_image(o):
     # Now it's just a normal create_img()
     create_img(o, o.fix, tmpnam)
 
+    # cleanup the tmpfile
+    os.remove(tmpnam)
+
 def update_links():
         print 'Update links.'
 
