@@ -44,11 +44,26 @@ def svn_commit(msg, paths):
 #    print "skipping commit cmd <%s>" % svncmd
     return cmd(svncmd)
 
+def is_svn_file(path):
+    try:
+        x=cmd("svn ls %s" % path)
+        return True
+    except subprocess.CalledProcessError:
+        return False
+    return False
+
+def is_symlink(path):
+    return os.path.islink(path) and not is_svn_file(path)
+
 def get_hash(path):
     log("get hash for <%s>" % path)
     s = sha.new()
     s.update(file(path).read())
     return s.hexdigest()
+
+def error(msg):
+    sys.stderr.write(msg)
+    sys.exit(1)
 
 def create_img(o, path, src_img_path = None, replace = False):
 
