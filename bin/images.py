@@ -15,7 +15,8 @@ import sha
 # - fix space in path issues.
 # - more pre-error checking (and usage)
 
-IMG_URL="file:///space/work/simics/img_test/img_repo/"
+IMG_URL="file:///space/work/simics/img_test/src_repo/images"
+#IMG_URL="http://ala-svn.wrs.com/svn/Simics/simics/images"
 
 PLACEHOLDER_SUFFIX = ".simimg"
 HASH_LEN=40
