@@ -94,8 +94,7 @@ def create_img(o, path, src_img_path = None, replace = False):
     # in case we need to abort.
     placeholder_path = path+PLACEHOLDER_SUFFIX
     if not replace and os.path.exists(placeholder_path):
-        print "FATAL ERROR: %s already exists." % placeholder_path
-        sys.exit(1)
+        error("FATAL ERROR: %s already exists.\n" % placeholder_path)
 
     (dirname, fname, hash) = get_img_hash_path(src_img_path)
 
