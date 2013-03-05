@@ -13,6 +13,8 @@ import sha
 #TODO:
 # - fix space in path issues.
 # - more pre-error checking (and usage)
+# - Annotation for images?
+# - git-svn support (at least for update)
 
 IMG_URL="file:///space/work/simics/img_test/src_repo/images"
 #IMG_URL="http://ala-svn.wrs.com/svn/Simics/simics/images"
