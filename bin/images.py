@@ -11,7 +11,6 @@ import stat
 import sha
 
 #TODO:
-# - fix space in path issues.
 # - more pre-error checking (and usage)
 # - Annotation for images?
 # - git-svn support (at least for update)
@@ -33,28 +32,27 @@ def cmd(cmd):
     return x
 
 def svn_add_file(path):
-    return cmd("svn add %s" % path)
+    return cmd("svn add \"%s\"" % path)
 
 def svn_rm_file(path):
-    return cmd("svn rm %s" % path)
+    return cmd("svn rm \"%s\"" % path)
 
 def svn_mkdir(dirname):
-    return cmd("svn mkdir %s" % dirname)
+    return cmd("svn mkdir \"%s\"" % dirname)
 
 def svn_commit(msg, paths):
     if type(paths) == type([]):
-        args = " ".join(paths)
+        args = " ".join(["\""+x+"\"" for x in paths])
     else:
         args = paths
     svncmd = "svn commit -m \"%s\" --depth empty %s" % (msg, args)
     for p in paths:
         cmd("svn up %s" % p)
-#    print "skipping commit cmd <%s>" % svncmd
     return cmd(svncmd)
 
 def is_svn_file(path):
     try:
-        x=cmd("svn ls %s" % path)
+        x=cmd("svn ls \"%s\"" % path)
         return True
     except subprocess.CalledProcessError:
         return False
@@ -102,12 +100,12 @@ def create_img(o, path, src_img_path = None, replace = False):
     img_dir = os.path.join(o.repo, dirname)
     img_path = os.path.join(img_dir, fname)
     img_commit = [] # remember whats been added until it's time to commit
-    cmd("svn up --depth empty %s" % img_dir)
+    cmd("svn up --depth empty \"%s\"" % img_dir)
     if not os.path.exists(img_dir):
         svn_mkdir(img_dir)
         img_commit.append(img_dir)
 
-    cmd("svn up --depth empty %s" % img_path)
+    cmd("svn up --depth empty \"%s\"" % img_path)
     if not os.path.exists(img_path):
         log("cp %s -> %s" % (src_img_path, img_path))
         shutil.copy(src_img_path, img_path)
@@ -213,7 +211,7 @@ def fix_old_image(o):
     try:
         r = svn_info(o, imgdir_url)
     except subprocess.CalledProcessError,e:
-        cmd("svn mkdir -m \"create image directory <%s>\" %s" % (dirname, imgdir_url))
+        cmd("svn mkdir -m \"create image directory <%s>\" \"%s\"" % (dirname, imgdir_url))
 
     mvcmd = "svn mv -m \"move image data for %s to image storage area.\"  \"%s\" \"%s/%s/%s\"" % (o.fix, info["URL"], IMG_URL, dirname, fname)
     cmd(mvcmd)
@@ -246,8 +244,8 @@ def update_link(o, dirname, fname):
 
     if not is_svn_file(img_path):
         log("updating for %s" % img_path)
-        cmd("svn up --depth empty %s" % img_dir)
-        cmd("svn up --depth empty %s" % img_path)
+        cmd("svn up --depth empty \"%s\"" % img_dir)
+        cmd("svn up --depth empty \"%s\"" % img_path)
         if not is_svn_file(img_path):
             error("Failed to find image data for %s\n hash:%s\nimg_path:%s\n" %
                   (linkpath, hash, img_path))
@@ -276,7 +274,7 @@ def setup(o):
     if os.path.exists(o.repo):
         error("%s already exists, can't initialize a new image repo there." %
               o.repo)
-    cmd("svn co --depth empty %s %s" % (IMG_URL, o.repo))
+    cmd("svn co --depth empty \"%s\" \"%s\"" % (IMG_URL, o.repo))
 
 def main():
     parser = optparse.OptionParser(usage = 'images.py [options]')
