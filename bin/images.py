@@ -362,6 +362,8 @@ def main():
     if o.update:
         update_links(o)
 
+# helper to find some files that generate collision in the
+# directory part of the hash for the test system.
 def findsha(dirname, instance = 0):
     y = 0
     i = 0
