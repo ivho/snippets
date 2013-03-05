@@ -7,7 +7,13 @@ import os
 import shutil
 import stat
 
-#TODO: fix space in path issues.
+#FIXME: should we use md5sum which is available in mini-python in the
+#       simics installation?
+import sha
+
+#TODO:
+# - fix space in path issues.
+# - more pre-error checking (and usage)
 
 IMG_URL="file:///space/work/simics/img_test/img_repo/"
 
