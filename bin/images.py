@@ -166,7 +166,7 @@ def create_img(o, path, src_img_path = None, replace = False):
 
     # commit the result (i.e the placeholder and the svn:ignore property
     # changes on the directory and possibly the image data)
-    svn_commit("add image <%s>" % path, [placeholder_path, local_img_dir])
+    svn_commit("Add image reference for <%s>." % path, [placeholder_path, local_img_dir])
     # and finally commit the image data
     if len(img_commit) != 0:
         # I'd really like to do this atomically with the previous commit
