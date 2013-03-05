@@ -2,7 +2,6 @@
 
 import sys, optparse
 import subprocess
-import sha
 import os
 import shutil
 import stat
@@ -106,8 +105,8 @@ def create_img(o, path, src_img_path = None, replace = False):
 
     cmd("svn up --depth empty %s" % img_path)
     if not os.path.exists(img_path):
-        log("move %s -> %s" % (src_img_path, img_path))
-        shutil.move(src_img_path, img_path)
+        log("cp %s -> %s" % (src_img_path, img_path))
+        shutil.copy(src_img_path, img_path)
         svn_add_file(img_path)
         img_commit.append(img_path)
     # Make img file read only, since we wan't
@@ -145,13 +144,17 @@ def create_img(o, path, src_img_path = None, replace = False):
     do_ignore = True
     icmd = "svn propget svn:ignore \"%s\"" % local_img_dir
     ignore = subprocess.check_output(icmd, shell = True)
+
+    fname = os.path.basename(path)
     for x in ignore.split("\n"):
-        if x == path:
-            log("already ignored <%s> == <%s>." % (x, path))
+        log("checking <%s> <%s>" % (x, fname))
+        if x == fname:
+            log("already ignored <%s> == <%s>." % (x, fname))
             do_ignore = False
+            break
 
     if do_ignore:
-        ignore += os.path.basename(path)
+        ignore += fname
         for x in ignore.split("\n"):
             log("post-ign:<%s>" % x)
         icmd = "svn propset svn:ignore \"%s\" \"%s\"" % (ignore, local_img_dir)
@@ -239,9 +242,8 @@ def update_link(o, dirname, fname):
             error("Failed to find image data for %s\n hash:%s\nimg_path:%s\n" %
                   (linkpath, hash, img_path))
 
-    if not is_symlink(linkpath):
-        error("%s is not a symlink.\n" % linkpath)
-    os.remove(linkpath)
+    if os.path.exists(linkpath):
+        error("%s already exists, and is not a symlink.\n")
     os.symlink(img_path, linkpath)
 
 
@@ -250,13 +252,23 @@ def update_links(o):
         for (path, dirs, files) in os.walk(svndir):
             if '.svn' in dirs:
                 dirs.remove('.svn')
+            # First, find all symlinks and remove them
+            for f in files:
+                fp = os.path.join(path, f)
+                print "file: %s" % fp
+                if is_symlink(fp):
+                    os.remove(fp)
+                    print "%s - is link, removing" % fp
+            # Second, re-create symlinks for all .simimg files
             for f in files:
                 if f.endswith(PLACEHOLDER_SUFFIX):
                     update_link(o, path, f)
 
-def usage(argv):
-    print "usage: %s --repo=<repo-root> --add=<path-to-image> --update-links[=<directory-to-update>" % argv[0]
-    sys.exit()
+def setup(o):
+    if os.path.exists(o.repo):
+        error("%s already exists, can't initialize a new image repo there." %
+              o.repo)
+    cmd("svn co --depth empty %s %s" % (IMG_URL, o.repo))
 
 def main():
     parser = optparse.OptionParser(usage = 'images.py [options]')
@@ -266,6 +278,12 @@ def main():
         action = 'store',
         metavar = '<img-repo-dir>',
         help = 'Set the path to the image repository.')
+
+    parser.add_option(
+        '--setup',
+        dest = 'setup',
+        action = 'store_true',
+        help = 'Initialize and setup a new empty image reop in <img-repo-dir>.')
 
     parser.add_option(
         '--add',
@@ -281,6 +299,7 @@ def main():
         metavar = '<versioned-image-file>',
         help = 'Remove reference to image in src repo.'
         )
+
     parser.add_option(
         '--replace',
         dest = 'replace',
@@ -324,6 +343,9 @@ def main():
     if not (o.repo or o.add or o.update):
         sys.stdout.write('Nothing to do.\n')
         sys.exit(0)
+
+    if o.setup:
+        setup(o)
 
     if o.fix:
         fix_old_image(o)
