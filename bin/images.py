@@ -174,10 +174,6 @@ def create_img(o, path, src_img_path = None, replace = False):
         # checkout directory.
         svn_commit("add image data <%s>" % path, img_commit)
 
-
-def set_repo(repo):
-    print 'Set repo to \"%s\".' % repo
-
 def add_images(o):
     for image in o.add:
 #        if not is_svn_file(image):
@@ -200,7 +196,6 @@ def svn_info(o, path):
         except ValueError:
             pass
     return d
-#    print d
 
 # Intended for the initial extermination of the images
 # present in the SVN repo.
@@ -221,7 +216,6 @@ def fix_old_image(o):
         cmd("svn mkdir -m \"create image directory <%s>\" %s" % (dirname, imgdir_url))
 
     mvcmd = "svn mv -m \"move image data for %s to image storage area.\"  \"%s\" \"%s/%s/%s\"" % (o.fix, info["URL"], IMG_URL, dirname, fname)
-    print "cmd: <%s>" % mvcmd
     cmd(mvcmd)
 
     # Now it's just a normal create_img()
@@ -239,7 +233,6 @@ def remove_image(o):
 def update_link(o, dirname, fname):
     path=os.path.join(dirname, fname)
     linkpath = path[:len(path)-len(PLACEHOLDER_SUFFIX)]
-    print "update %s (%s)" % (linkpath, path)
 
     hash=file(path).read()
     if len(hash) != HASH_LEN:
@@ -252,7 +245,7 @@ def update_link(o, dirname, fname):
     img_path = os.path.join(img_dir, hash[2:])
 
     if not is_svn_file(img_path):
-        print "updating for %s" % img_path
+        log("updating for %s" % img_path)
         cmd("svn up --depth empty %s" % img_dir)
         cmd("svn up --depth empty %s" % img_path)
         if not is_svn_file(img_path):
@@ -272,10 +265,8 @@ def update_links(o):
             # First, find all symlinks and remove them
             for f in files:
                 fp = os.path.join(path, f)
-                print "file: %s" % fp
                 if is_symlink(fp):
                     os.remove(fp)
-                    print "%s - is link, removing" % fp
             # Second, re-create symlinks for all .simimg files
             for f in files:
                 if f.endswith(PLACEHOLDER_SUFFIX):
