@@ -73,6 +73,15 @@ def error(msg):
     sys.stderr.write(msg)
     sys.exit(1)
 
+def get_img_hash_path(path):
+    # Get the hash of the file used for archiving
+    # and split it into git-like structure.
+    # xx/yyyyyyyyyyy
+    hash = get_hash(path)
+    dirname = hash[:2]
+    fname = hash[2:]
+    return (dirname, fname, hash)
+
 def create_img(o, path, src_img_path = None, replace = False):
 
     img_added = False
@@ -88,13 +97,7 @@ def create_img(o, path, src_img_path = None, replace = False):
         print "FATAL ERROR: %s already exists." % placeholder_path
         sys.exit(1)
 
-
-    # Get the hash of the file used for archiving
-    # and split it into git-like structure.
-    # xx/yyyyyyyyyyy
-    hash = get_hash(src_img_path)
-    dirname = hash[:2]
-    fname = hash[2:]
+    (dirname, fname, hash) = get_img_hash_path(src_img_path)
 
     # Create the file in img repo wisth hash based name
     img_dir = os.path.join(o.repo, dirname)
@@ -188,29 +191,42 @@ def add_images(o):
 def replace_image(o):
     create_img(o, o.replace, o.src, replace = True)
 
+def svn_info(o, path):
+    info = cmd("svn info \"%s\"" % path)
+    d={}
+    for i in info.split("\n"):
+        try:
+            (tag, data) = i.split(":", 1)
+            d[tag] = data.strip()
+        except ValueError:
+            pass
+    return d
+#    print d
+
 # Intended for the initial extermination of the images
 # present in the SVN repo.
 def fix_old_image(o):
     log("fix old image:")
 
-    # Find a free tmp name for this file in the same dir
-    tmp = 0
-    while True:
-        tmpnam = "%s.%d" % (o.fix, tmp)
-        if not os.path.exists(tmpnam):
-            break
-        tmp += 1
+    if not is_svn_file(o.fix):
+        error("%s is not a subversion controllerd file.\n" % o.fix)
 
-    # make a copy of the image and remove the svn version
-    cmd("cp %s %s" % (o.fix, tmpnam))
-    cmd("svn rm %s" % o.fix)
-    svn_commit("fix old svn image <%s>" % o.fix, [o.fix, os.path.dirname(o.fix)])
+    info = svn_info(o, o.fix)
+    (dirname, fname, hash) = get_img_hash_path(o.fix)
+
+    # Check if we need to create the top hash dir in images/
+    imgdir_url = IMG_URL + "/" + dirname
+    try:
+        r = svn_info(o, imgdir_url)
+    except subprocess.CalledProcessError,e:
+        cmd("svn mkdir -m \"create image directory <%s>\" %s" % (dirname, imgdir_url))
+
+    mvcmd = "svn mv -m \"move image data for %s to image storage area.\"  \"%s\" \"%s/%s/%s\"" % (o.fix, info["URL"], IMG_URL, dirname, fname)
+    print "cmd: <%s>" % mvcmd
+    cmd(mvcmd)
 
     # Now it's just a normal create_img()
-    create_img(o, o.fix, tmpnam)
-
-    # cleanup the tmpfile
-    os.remove(tmpnam)
+    create_img(o, o.fix)
 
 def remove_image(o):
     for path in o.remove:
