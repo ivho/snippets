@@ -5,6 +5,7 @@ import subprocess
 import os
 import shutil
 import stat
+import tempfile
 
 #FIXME: should we use md5sum which is available in mini-python in the
 #       simics installation?
@@ -14,6 +15,10 @@ import sha
 # - more pre-error checking (and usage)
 # - Annotation for images?
 # - git-svn support (at least for update)
+# - test on windows
+# - cleanup the svn:ignore handling - join add/remove code?
+# - add a "verify/fixup/sync" option for svn:ignore (would be useful
+#   when merging with conflicts)
 
 IMG_URL="file:///space/work/simics/img_test/src_repo/images"
 #IMG_URL="http://ala-svn.wrs.com/svn/Simics/simics/images"
@@ -22,7 +27,7 @@ PLACEHOLDER_SUFFIX = ".simimg"
 HASH_LEN=40
 
 def log(msg):
-#    print "=== ", msg
+    print "=== ", msg
     pass
 
 def cmd(cmd):
@@ -68,7 +73,10 @@ def get_hash(path):
     return s.hexdigest()
 
 def error(msg):
+# For debugging it might be nice to have all output on
+# stdout so log/error doesn't interleave with.
     sys.stderr.write(msg)
+#    log(msg)
     sys.exit(1)
 
 def get_img_hash_path(path):
@@ -144,11 +152,17 @@ def create_img(o, path, src_img_path = None, replace = False):
 
     # Add the symlink to svn:ignore
     do_ignore = True
-    icmd = "svn propget svn:ignore \"%s\"" % local_img_dir
+    icmd = "svn propget --strict svn:ignore \"%s\"" % local_img_dir
     ignore = subprocess.check_output(icmd, shell = True)
 
+    # check for special case "empty" svn:ignore property
+    if ignore == "\n":
+        log("remove leading newline for previously empty svn:ignore")
+        ignore = ""
+
+    log("ignore<%s>" % ignore)
     fname = os.path.basename(path)
-    for x in ignore.split("\n"):
+    for x in ignore.strip().split("\n"):
         log("checking <%s> <%s>" % (x, fname))
         if x == fname:
             log("already ignored <%s> == <%s>." % (x, fname))
@@ -157,14 +171,18 @@ def create_img(o, path, src_img_path = None, replace = False):
 
     if do_ignore:
         ignore += fname
-        for x in ignore.split("\n"):
+        for x in ignore.strip().split("\n"):
             log("post-ign:<%s>" % x)
-        icmd = "svn propset svn:ignore \"%s\" \"%s\"" % (ignore, local_img_dir)
+        tmp = tempfile.NamedTemporaryFile(delete = False)
+        tmp.write(ignore)
+        tmp.close()
+        icmd = "svn propset -F %s svn:ignore  \"%s\"" % (tmp.name, local_img_dir)
         ignore = subprocess.check_output(icmd, shell = True)
 
     # commit the result (i.e the placeholder and the svn:ignore property
     # changes on the directory and possibly the image data)
-    svn_commit("Add image reference for <%s>." % path, [placeholder_path, local_img_dir])
+    svn_commit("Add image reference for <%s>." % path,
+               [placeholder_path, local_img_dir])
     # and finally commit the image data
     if len(img_commit) != 0:
         # I'd really like to do this atomically with the previous commit
@@ -174,8 +192,8 @@ def create_img(o, path, src_img_path = None, replace = False):
 
 def add_images(o):
     for image in o.add:
-#        if not is_svn_file(image):
-#            error("%s is not a svn controlled file\n" % image)
+        if is_svn_file(image):
+            error("%s is a svn controlled file, use --fix\n" % image)
         log('Add image \"%s\"' % image)
         create_img(o, image)
 
@@ -187,12 +205,9 @@ def replace_image(o):
 def svn_info(o, path):
     info = cmd("svn info \"%s\"" % path)
     d={}
-    for i in info.split("\n"):
-        try:
-            (tag, data) = i.split(":", 1)
-            d[tag] = data.strip()
-        except ValueError:
-            pass
+    for i in info.strip().split("\n"):
+        (tag, data) = i.split(":", 1)
+        d[tag] = data.strip()
     return d
 
 # Intended for the initial extermination of the images
@@ -219,14 +234,58 @@ def fix_old_image(o):
     # Now it's just a normal create_img()
     create_img(o, o.fix)
 
+#FIXME: There is some code duplication with create_image
+#       here, regarding svn:ignore
 def remove_image(o):
     for path in o.remove:
-        is_svn_file(path+PLACEHOLDER_SUFFIX)
-        is_symlink(path)
-        os.remove(path)
+        if not is_svn_file(path+PLACEHOLDER_SUFFIX):
+            errror("Placeholder <%s> does not exist.\n")
+
+        local_img_dir = os.path.dirname(path)
+        fname = os.path.basename(path)
+        icmd = "svn propget --strict svn:ignore \"%s\"" % local_img_dir
+        ignore = subprocess.check_output(icmd, shell = True)
+
+        # create a tmp file for svn:ignore update
+        found_ignore = False
+        tmp = tempfile.NamedTemporaryFile(delete = False)
+        log(tmp.name)
+        log(ignore.strip().split("\n"))
+        empty = True
+        for ifname in ignore.strip().split("\n"):
+#            if ifname == "":
+#                error("internal error: found empty line (remove 1)\n")
+            if fname == ifname:
+                found_ignore = True
+                log("found <%s> in svn:ignore" % fname)
+            else:
+                empty = False
+                log("writing <%s> to <%s>" % (ifname, tmp.name))
+                tmp.write(ifname+"\n")
+
+        if not found_ignore:
+            error("Unable to find file <%s> in svn:ignore for directory <%s>\n" %
+                  (fname, local_img_dir))
+        tmp.close()
+
+        if empty:
+#FIXME: there is a choice here to either delete the svn:ignore property
+#       or set it to empty (""), to avoid tree conflicts when merging.
+#       I've chosen to set it to "". That way you can at least diff
+#       the property changes on conflict.
+#            icmd = "svn propdel svn:ignore  \"%s\"" % (local_img_dir)
+            icmd = "svn propset svn:ignore \"\" \"%s\"" % (local_img_dir)
+            ignore = subprocess.check_output(icmd, shell = True)
+        else:
+            icmd = "svn propset -F %s svn:ignore  \"%s\"" % (tmp.name, local_img_dir)
+            ignore = subprocess.check_output(icmd, shell = True)
+
+        if is_symlink(path):
+            os.remove(path)
+
         svn_rm_file(path+PLACEHOLDER_SUFFIX)
         svn_commit("remove image reference for <%s>" % path,
-                   [path+PLACEHOLDER_SUFFIX])
+                   [path+PLACEHOLDER_SUFFIX, local_img_dir])
 
 def update_link(o, dirname, fname):
     path=os.path.join(dirname, fname)
