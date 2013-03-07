@@ -1,14 +1,7 @@
 #!/bin/bash
-
-REPO=/space/work/simics/img_test/co/img_repo/
-echo testing
-cd /space/work/simics/img_test
-rm -rf co img_repo src_repo
-tar xf img_test.tar
-cd co/src_repo
+set -o nounset
 
 function check_status {
-    pwd
     if [ "$(svn status)" != "" ] ; then
 	echo "Non-zero svn status."
 	exit 1
@@ -16,40 +9,203 @@ function check_status {
     echo "status ok."
 }
 
+function die {
+    echo "image.py return non-zero."
+    exit 1
+}
+
+function check_shasum {
+F=$1
+SHA=$2
+current=$(sha1sum $F | cut -c -40)
+if [ $current != $SHA ] ; then
+    echo "bad shasum"
+    echo "file:     " $F
+    echo "expected: " $SHA
+    echo "got:      " $current
+    exit 1
+fi
+echo "shasum ok for" $F
+}
+
+PYTHON=python
+#PYTHON=/space/work/simics//install/simics-4.6.66/bin/mini-python
+
+IREPO=/space/work/simics/img_test/co/img_repo/
+SREPO_URL=file:///space/work/simics/img_test/src_repo/
+IREPO_URL=file:///space/work/simics/img_test/src_repo/images
+echo testing
+cd /space/work/simics/img_test
+rm -rf co img_repo src_repo
+
+#FIXME: recreate img_test.tar with svnadmin instead of relying on an
+#       existing test repo.
+tar xf img_test.tar
+
+mkdir co
+cd co
+echo "Checkout src"
+svn co $SREPO_URL/trunk src_repo
+echo "Setup img_repo"
+$PYTHON ~/bin/images.py --repo $IREPO --setup || die
+#exit 1
+
+rm -f /tmp/svn.log
+#cp ~/proj/projectlocker/snippets/bin/pre-commit /space/work/simics/img_test/src_repo/hooksto
+cp ~/proj/projectlocker/snippets/bin/pre-commit.py /space/work/simics/img_test/src_repo/hooks/pre-commit
+cd src_repo
+
 check_status
 
-echo "**** FIX ls"
-python ~/bin/images.py --repo $REPO --fix ./targets/tgt-simple/images/ls
+echo "TC: FIX ls"
+$PYTHON ~/bin/images.py --repo $IREPO --fix ./targets/tgt-simple/images/ls
 check_status
 
 echo
-echo "**** add pidof"
+echo "TC: add pidof"
+pidof_orgshasum=$(sha1sum /bin/pidof | cut -c -40)
 cp /bin/pidof /space/work/simics/img_test/co/src_repo/targets/tgt-simple/images/pidof
-python ~/bin/images.py --repo $REPO --add ./targets/tgt-simple/images/pidof
+$PYTHON ~/bin/images.py --repo $IREPO --add ./targets/tgt-simple/images/pidof || die
 check_status
+svn cp -m "branching to org_pidof" $SREPO_URL/trunk $SREPO_URL/branches/org_pidof
+
+
+check_shasum ./targets/tgt-simple/images/pidof $pidof_orgshasum
+
 
 echo
-echo "**** replace pidof"
+echo "TC: replace pidof"
 cp /bin/pidof /tmp/pidof2
 echo aa >> /tmp/pidof2
-python ~/bin/images.py --repo $REPO --replace ./targets/tgt-simple/images/pidof --src /tmp/pidof2
+pidof_newshasum=$(sha1sum /tmp/pidof2 | cut -c -40)
+$PYTHON ~/bin/images.py --repo $IREPO --replace ./targets/tgt-simple/images/pidof --src /tmp/pidof2 || die
 check_status
+
+check_shasum ./targets/tgt-simple/images/pidof $pidof_newshasum
 
 echo
 echo "*** add collision on dirname 95/"
 echo -n abcd234 > ./targets/tgt-simple/images/collision
-python ~/bin/images.py --repo $REPO --add ./targets/tgt-simple/images/collision
+$PYTHON ~/bin/images.py --repo $IREPO --add ./targets/tgt-simple/images/collision
 check_status
 
 echo
 echo "*** replace collision on dirname 95/"
 rm -f /tmp/collision
 echo -n abcd295 > /tmp/collision
-python ~/bin/images.py --repo $REPO --replace ./targets/tgt-simple/images/collision --src /tmp/collision
+$PYTHON ~/bin/images.py --repo $IREPO --replace ./targets/tgt-simple/images/collision --src /tmp/collision || die
 check_status
 
 echo
-echo "**** add pidof again with different name"
+echo "TC: add pidof again with different name"
 cp /bin/pidof /space/work/simics/img_test/co/src_repo/targets/tgt-simple/images/pidof2
-python ~/bin/images.py --repo $REPO --add ./targets/tgt-simple/images/pidof2
+$PYTHON ~/bin/images.py --repo $IREPO --add ./targets/tgt-simple/images/pidof2 || die
 check_status
+
+echo
+echo "TC: whitespace"
+echo kalle > "./testing ws.txt"
+$PYTHON ~/bin/images.py --repo $IREPO --add "./testing ws.txt" || die
+check_status
+echo "TC: whitespace replace"
+echo olle > "/tmp/testing ws2.txt"
+$PYTHON ~/bin/images.py --repo $IREPO --replace "./testing ws.txt" --src "/tmp/testing ws2.txt" || die
+check_status
+
+echo "TC: whitespace remove"
+$PYTHON ~/bin/images.py --repo $IREPO --remove "./testing ws.txt" 2>&1  || die
+check_status
+
+echo
+echo "TC: remove pidof2"
+$PYTHON ~/bin/images.py --repo $IREPO --remove ./targets/tgt-simple/images/pidof2 || die
+check_status
+
+echo
+echo "TC: update"
+$PYTHON ~/bin/images.py --repo $IREPO --update . || die
+check_status
+
+# Check that shasum is correct after svn-switch and update
+check_shasum ./targets/tgt-simple/images/pidof $pidof_newshasum
+svn switch $SREPO_URL/branches/org_pidof
+check_shasum ./targets/tgt-simple/images/pidof $pidof_newshasum
+$PYTHON ~/bin/images.py --repo $IREPO --update .
+check_status
+check_shasum ./targets/tgt-simple/images/pidof $pidof_orgshasum
+
+echo "*** remove img_repo"
+rm -rf ../img_repo
+svn co --depth empty $IREPO_URL ../img_repo
+echo "*** update"
+$PYTHON ~/bin/images.py --repo $IREPO --update .
+echo "*** check"
+check_shasum ./targets/tgt-simple/images/pidof $pidof_orgshasum
+check_status
+
+echo 
+echo "TC: back to trunk"
+svn switch $SREPO_URL/trunk
+$PYTHON ~/bin/images.py --repo $IREPO --update . || die
+check_status
+
+NUM_TGT=2
+NUM_FILES=2
+
+for dir in $(seq $NUM_TGT) ; do 
+    svn mkdir targets/tgt-$dir
+    svn commit -m "dummy target $dir" targets/tgt-$dir
+    for x in $(seq $NUM_FILES) ; do
+	echo "*** many files $dir $x"
+	cp /bin/ls targets/tgt-$dir/img$x
+	echo $dir $x >> targets/tgt-$dir/img$x
+	$PYTHON ~/bin/images.py --repo $IREPO --add targets/tgt-$dir/img$x
+	$PYTHON ~/bin/images.py --repo $IREPO --update .
+	check_status
+	branch_name=add_${dir}_${x}
+	svn cp -m "branching to $branch_name" $SREPO_URL/trunk $SREPO_URL/branches/$branch_name
+    done
+done
+
+for dir in $(seq $NUM_TGT) ; do 
+    for x in $(seq $NUM_FILES) ; do
+	echo "*** replace $dir $x"
+	cp /bin/ls /tmp/replace_test
+	echo replace $dir $x >> /tmp/replace_test
+	$PYTHON ~/bin/images.py --repo $IREPO --replace targets/tgt-$dir/img$x --src /tmp/replace_test || die
+	$PYTHON ~/bin/images.py --repo $IREPO --update . || die
+	check_status
+	branch_name=replace_${dir}_${x}
+	svn cp -m "branching to $branch_name" $SREPO_URL/trunk $SREPO_URL/branches/$branch_name
+
+    done
+done
+
+for dir in $(seq $NUM_TGT) ; do 
+    for x in $(seq $NUM_FILES) ; do
+	echo "*** remove $dir $x"
+	cp /bin/ls /tmp/replace_test
+	echo replace $dir $x >> /tmp/replace_test
+	$PYTHON ~/bin/images.py --repo $IREPO --remove targets/tgt-$dir/img$x
+	$PYTHON ~/bin/images.py --repo $IREPO --update . || die
+	check_status
+	branch_name=remove_${dir}_${x}
+	svn cp -m "branching to $branch_name" $SREPO_URL/trunk $SREPO_URL/branches/$branch_name
+
+    done
+done
+
+
+for dir in $(seq $NUM_TGT) ; do 
+    for x in $(seq $NUM_FILES) ; do
+	echo "*** many files add again $dir $x"
+	cp /bin/ls targets/tgt-$dir/img$x
+	echo $dir $x >> targets/tgt-$dir/img$x
+	$PYTHON ~/bin/images.py --repo $IREPO --add targets/tgt-$dir/img$x
+	$PYTHON ~/bin/images.py --repo $IREPO --update .
+	check_status
+	branch_name=readd_${dir}_${x}
+	svn cp -m "branching to $branch_name" $SREPO_URL/trunk $SREPO_URL/branches/$branch_name
+    done
+done
+
