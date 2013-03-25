@@ -8,4 +8,5 @@
     lol = log --graph --decorate --pretty=oneline --abbrev-commit
     lola = log --graph --decorate --pretty=oneline --abbrev-commit --all
     dc = diff --cached
+    topstash = stash show -p stash@{0}
     unpushed = log --branches --not --remotes
