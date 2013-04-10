@@ -1,0 +1,2 @@
+#!/bin/sh
+svn status | grep -e '^\?' | sed 's/\?       \(.*\)/\"\1\"/g' | xargs rm -f
