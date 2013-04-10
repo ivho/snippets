@@ -1,0 +1,23 @@
+#!/bin/sh
+set -o errexit
+
+if [ -z "$1" ] ; then
+   echo "usage: $0 <new-branch-name>"
+   exit 1
+fi
+
+set -o nounset
+branch=$1
+url=http://ala-svn.wrs.com/svn/Simics/simics/branches
+urlb=$url/$branch
+
+# check that svn-branch exsts
+echo "checking svn branch..."
+svn ls $urlb
+echo "branch ok"
+
+git config --add svn-remote.$branch.url $urlb
+git config --add svn-remote.$branch.fetch :refs/remotes/$branch
+git svn fetch $branch
+git checkout -b ${branch}-svn -t $branch
+#git svn rebase newbranch
