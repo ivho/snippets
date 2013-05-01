@@ -1,8 +1,17 @@
 #!/bin/sh
-DIR=/home/ivho/var
-PIDFILE=$DIR/autossh_svetsen.pid
+set -x
+DIR=$HOME/.autossh
+PIDFILE=$DIR/autossh.pid
 
-[ -f /proc/$(cat $PIDFILE)/smaps ] || AUTOSSH_PIDFILE=$PIDFILE autossh svetsen -R 8888:localhost:8888 -R 11022:localhost:22 -f -N
+mkdir -p $DIR
 
-date >> $DIR/autossh_stamp.log
+if [ -f $PIDFILE ] ; then
+	if [ -d /proc/$(cat $PIDFILE) ] ; then
+		exit 0
+	fi
+fi
+
+date >> $DIR/autossh.log
+AUTOSSH_PIDFILE=$PIDFILE autossh svetsen -R 8888:localhost:8888 -R 11022:localhost:22 -f -N >> $DIR/autossh.log
+echo "Done" >> $DIR/autossh.log
 
