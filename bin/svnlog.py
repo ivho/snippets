@@ -65,7 +65,8 @@ class MyHTMLParser(HTMLParser):
             self.ld=d
             print "  %s %s %s" % (self.date.strftime("%H:%M"), self.msg, self.date.strftime("(%d/%b)"))
 #            print (self.__dict__)
-            if True:
+#            if True:
+            if False:
                 is_merge = self.msg.startswith("Merged") or self.msg.startswith("Blocked")
                 if not is_merge:
                     for x in self.files:
