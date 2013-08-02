@@ -27,33 +27,30 @@ def get_datestr(l, hostname):
         split = l.split(hostname)
 #        print "B:", len(split), split[0]
 #        print "B:", split[1]
-        return split[0]
+        return None
 
 def parse_date(datestr):
     date = datetime.datetime.strptime(datestr, '%a %b %d %H:%M:%S %Z %Y ')
     return date
 
-def parse_report(f):
+def parse_report(f, verbose):
     weeks=[]
     last = 0
     last_start = 0
     last_start_date = None
     ld = 0
-
-    for l in file(f).readlines():
+    first_time = True
+    lines = [l for l in file(f).readlines()]
+    for (i, l) in enumerate(lines):
         try:
             (datestr, host, pwd, hist, cmd) = get_datestr(l, "nobu2")
-        except ValueError:
-  #          print "old"
+        except TypeError:
             continue
-#        x = rfc822.parsedate_tz(datestr)
-#        date = datetime.datetime.fromtimestamp(x)
         try:
             date = parse_date(datestr)
-#            date = datetime.datetime.strptime(datestr, '%a %b %d %H:%M:%S %Z %Y ')
         except ValueError:
-            print "skip date:", l.strip("\n ")
             continue
+
         day=int(date.strftime("%d"))
         week=int(date.strftime("%V"))
         epoc = time.mktime(date.timetuple())
@@ -66,17 +63,22 @@ def parse_report(f):
             last = epoc
             last_start = epoc
 
-        if break_time > 3600*1:
+        if break_time > 3600*1 or i == len(lines)-1:
             # Found a break... print the last batch
             end = last_date
             start = last_start_date
 
-            if int(last_start_date.strftime("%V")) != week:
+#            if int(last_start_date.strftime("%V")) != int(end.strftime("%V")):
+            if first_time or int(last_start_date.strftime("%V")) != week:
                 print
                 print "WEEK %d" % week
                 print "=================="
-            if int(last_start_date.strftime("%d")) != day:
-                print date.strftime("==q %a %b %d")
+
+#            if int(last_start_date.strftime("%d")) != int(end.strftime("%d")):
+            if first_time or int(last_start_date.strftime("%d")) != day:
+                print date.strftime("== %a %b %d")
+		first_time = False
+
 #            print "diff: %d %0.2fh" % (diff, )
             length = (time.mktime(end.timetuple()) -
                       time.mktime(start.timetuple()))
@@ -92,15 +94,23 @@ def parse_report(f):
         last = epoc
         last_date = date
 
-        if False:
-#        if True:
-            print datestr, pwd, "-", cmd.strip()
+#        if False:
+        if verbose:
+            print datestr, host, pwd
 
-#        print "week", week, epoc
+import argparse
 
-#        print dir(x)
-#        self.date = datetime.datetime(*strptime(a[0],"%Y-%m-%dT%H:%M:%S")[0:6])
-#        print l
 
 if __name__ == "__main__":
-    parse_report(sys.argv[1])
+	parser = argparse.ArgumentParser(description='Process ps log.')
+	parser.add_argument('-v', '--verbose', dest='verbose',
+			    action='store_true', help='Print all entries in pslog.')
+
+	parser.add_argument("files", nargs="+", help="echo the string you use here")
+
+
+	args = parser.parse_args()
+	print args.verbose
+	print args.files
+
+	parse_report(args.files[0], args.verbose)
