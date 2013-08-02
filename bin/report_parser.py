@@ -6,27 +6,17 @@ import rfc822
 import time
 
 def get_datestr(l, hostname):
- #       print "<%s>" % l.strip()
         split = l.split("host:")
-#        print "A:", len(split), split[0]
         if len(split) > 1:
             datestr = split[0]
- #           print "A:", split[1]
             rest=split[1].split(" ", 3)
-#            print len(rest)
             if len(rest) != 4:
                 raise ValueError
             host = rest[0]
             pwd = rest[1].split(":")[1]
             hist = int(rest[2])
             cmd = rest[3]
-#            print "X:", rest[0], rest[1], rest[2]
-#            print "Y:", rest[3]
             return (datestr, host, pwd, hist, cmd)
-#        hostname = "nobu2"
-        split = l.split(hostname)
-#        print "B:", len(split), split[0]
-#        print "B:", split[1]
         return None
 
 def parse_date(datestr):
