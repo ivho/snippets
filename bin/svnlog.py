@@ -52,8 +52,8 @@ class MyHTMLParser(HTMLParser):
 
         if tag == "logentry" and match:
             v=int(self.date.strftime("%V"))
-            if v < 47:
-                sys.exit(0)
+#            if v < 47:
+#                sys.exit(0)
 
             if self.lv != v:
                   print "Vecka %d (%s)" % (v , self.date.strftime("%Y"))
