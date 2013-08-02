@@ -1,0 +1,43 @@
+#!/usr/bin/python
+import report_parser
+import sys
+import time
+
+if __name__ == "__main__":
+    x = {}
+    for fn in sys.argv[1:]:
+
+        for l in file(fn).readlines():
+
+            try:
+                (datestr, host, pwd, hist, cmd) = report_parser.get_datestr(l, "nobu2")
+            except:
+                #          print "old"
+                continue
+#            print datestr
+            date = report_parser.parse_date(datestr)
+            week=int(date.strftime("%V"))
+            epoc = time.mktime(date.timetuple())
+            if not week in x:
+                x[week] = []
+            x[week].append((epoc, l))
+
+
+#    print len(x)
+#    ii = x.keys()
+#    print ii
+#    print ii
+#    ii.sort()
+#    print ii
+#    sys.exit(0)
+#    for k in [24]:
+    for k in sorted(x.keys()):
+        v = x[k]
+#        print "w:", k
+#        print " ", len(v)
+        def sortfun(a,b):
+#            print a[0], b[0]
+            return a[0]>b[0]
+        v.sort(cmp=sortfun)
+        for (l,cmd) in sorted(v, key=lambda student: student[0]):
+            print cmd,
