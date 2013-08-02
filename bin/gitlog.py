@@ -8,9 +8,12 @@ from email.utils import parsedate_tz
 
 if __name__ == "__main__":
     os.system("rm /tmp/timerep.ivho")
-    for proj in "qsp", "u-boot", "linux_qsp", "vxworks_qsp", "Simics":
-        os.system("(cd /space/work/simics/qsp/%s ; git log --date=short --format=format:'%%at|%%an|%s|%%s'  --date=local --since=2012-01 >> /tmp/timerep.ivho ; echo >> /tmp/timerep.ivho )" %
-                  (proj, proj))
+#    dirs = ["qsp", "u-boot", "linux_qsp", "vxworks_qsp", "Simics"]
+    dirs = ["totoro_simics", "linux-totoro", "u-boot-totoro"]
+    base = "/space/work/simics/totoro"
+    for proj in dirs:
+        os.system("(cd %s/%s ; git log --date=short --format=format:'%%at|%%an|%s|%%s'  --date=local --since=2012-01 >> /tmp/timerep.ivho ; echo >> /tmp/timerep.ivho )" %
+                  (base, proj, proj))
         os.system("")
     os.system("sort -nr /tmp/timerep.ivho > /tmp/timerep.sorted")
     f=file("/tmp/timerep.sorted")
