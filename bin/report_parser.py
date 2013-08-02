@@ -45,6 +45,8 @@ def parse_report(f, verbose):
         week=int(date.strftime("%V"))
         epoc = time.mktime(date.timetuple())
         break_time = epoc - last
+	def get_day(date):
+		return int(date.strftime("%d"))
 
         if last_start_date == None:
             last_start_date = date
@@ -59,21 +61,23 @@ def parse_report(f, verbose):
             start = last_start_date
 
 #            if int(last_start_date.strftime("%V")) != int(end.strftime("%V")):
-            if first_time or int(last_start_date.strftime("%V")) != week:
+            if first_time or last_week_print.strftime("%V") != start.strftime("%V"):
                 print
                 print "WEEK %d" % week
                 print "=================="
+		last_week_print = start
 
 #            if int(last_start_date.strftime("%d")) != int(end.strftime("%d")):
-            if first_time or int(last_start_date.strftime("%d")) != day:
-                print date.strftime("== %a %b %d")
+            if first_time or get_day(last_day_print) != get_day(start):
+                print start.strftime("== %a %b %d")
 		first_time = False
+		last_day_print = start
 
 #            print "diff: %d %0.2fh" % (diff, )
             length = (time.mktime(end.timetuple()) -
                       time.mktime(start.timetuple()))
             if (length != 0):
-                print " last: %0.2fh %s -> %s (prev break %0.1fh)" % (
+                print " last: %0.2fh %s -> %s (coming break %0.1fh)" % (
                     length/3600.,
                     last_start_date.strftime("%a %b %d %H:%M:%S"),
                     last_date.strftime("%a %b %d %H:%M:%S"),
@@ -84,9 +88,9 @@ def parse_report(f, verbose):
         last = epoc
         last_date = date
 
-#        if False:
         if verbose:
-            print datestr, host, pwd
+            print datestr, host, pwd, cmd.strip()
+
 
 import argparse
 
