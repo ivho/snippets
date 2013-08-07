@@ -14,7 +14,10 @@ def get_datestr(l, hostname):
                 raise ValueError
             host = rest[0]
             pwd = rest[1].split(":")[1]
-            hist = int(rest[2])
+	    try:
+		    hist = int(rest[2])
+	    except:
+		    hist = 0
             cmd = rest[3]
             return (datestr, host, pwd, hist, cmd)
         return None
