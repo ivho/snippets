@@ -10,7 +10,7 @@ def get_datestr(l, hostname):
         if len(split) > 1:
             datestr = split[0]
             rest=split[1].split(" ", 3)
-            if len(rest) != 4:
+            if len(rest) < 3:
                 raise ValueError
             host = rest[0]
             pwd = rest[1].split(":")[1]
@@ -18,7 +18,10 @@ def get_datestr(l, hostname):
 		    hist = int(rest[2])
 	    except:
 		    hist = 0
-            cmd = rest[3]
+	    if (len(rest) == 4):
+                    cmd = rest[3]
+	    else:
+		    cmd = "n/a"
             return (datestr, host, pwd, hist, cmd)
         return None
 
