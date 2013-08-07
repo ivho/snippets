@@ -37,6 +37,7 @@ def parse_report(f, verbose):
     ld = 0
     first_time = True
     lines = [l for l in f.readlines()]
+    summary = 0
     for (i, l) in enumerate(lines):
         try:
             (datestr, host, pwd, hist, cmd) = get_datestr(l, "nobu2")
@@ -68,10 +69,12 @@ def parse_report(f, verbose):
 
 #            if int(last_start_date.strftime("%V")) != int(end.strftime("%V")):
             if first_time or last_week_print.strftime("%V") != start.strftime("%V"):
+                print "sum: %0.2fh" % (summary/3600.)
                 print
                 print "WEEK %d" % week
                 print "=================="
 		last_week_print = start
+		summary = 0
 
 #            if int(last_start_date.strftime("%d")) != int(end.strftime("%d")):
             if first_time or get_day(last_day_print) != get_day(start):
@@ -83,11 +86,12 @@ def parse_report(f, verbose):
             length = (time.mktime(end.timetuple()) -
                       time.mktime(start.timetuple()))
             if (length != 0):
-                print " last: %0.2fh %s -> %s (coming break %0.1fh)" % (
+                print " activity: %0.2fh %s -> %s (coming break %0.1fh)" % (
                     length/3600.,
                     last_start_date.strftime("%a %b %d %H:%M:%S"),
                     last_date.strftime("%a %b %d %H:%M:%S"),
                     break_time/3600.)
+		summary += length
 
             last_start = epoc
             last_start_date = date
@@ -96,7 +100,7 @@ def parse_report(f, verbose):
 
         if verbose:
             print datestr, host, pwd, cmd.strip()
-
+    print "sum: %0.2fh" % (summary/3600.)
 
 import argparse
 
