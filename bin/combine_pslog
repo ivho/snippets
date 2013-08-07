@@ -8,11 +8,10 @@ if __name__ == "__main__":
     for fn in sys.argv[1:]:
 
         for l in file(fn).readlines():
-
-            try:
-                (datestr, host, pwd, hist, cmd) = report_parser.get_datestr(l, "nobu2")
-            except:
-                #          print "old"
+            res = report_parser.get_datestr(l, "nobu2")
+            if res != None:
+                (datestr, host, pwd, hist, cmd) = res
+            else:
                 continue
 #            print datestr
             date = report_parser.parse_date(datestr)
