@@ -69,6 +69,8 @@
   (function (lambda ()
               (global-set-key [(meta right)] 'python-shift-right)
               (global-set-key [(meta left)] 'python-shift-left)
+	      (setq indent-tabs-mode nil)
+	      (setq python-indent 4)
               (setq show-trailing-whitespace t))))
 
 (setq auto-mode-alist
