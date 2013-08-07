@@ -6,24 +6,24 @@ import rfc822
 import time
 
 def get_datestr(l, hostname):
-        split = l.split("host:")
-        if len(split) > 1:
-            datestr = split[0]
-            rest=split[1].split(" ", 3)
-            if len(rest) < 3:
-                raise ValueError
-            host = rest[0]
-            pwd = rest[1].split(":")[1]
-	    try:
-		    hist = int(rest[2])
-	    except:
-		    hist = 0
-	    if (len(rest) == 4):
-                    cmd = rest[3]
-	    else:
-		    cmd = "n/a"
-            return (datestr, host, pwd, hist, cmd)
-        return None
+    split = l.split("host:")
+    if len(split) > 1:
+        datestr = split[0]
+        rest=split[1].split(" ", 3)
+        if len(rest) < 3:
+            raise ValueError
+        host = rest[0]
+        pwd = rest[1].split(":")[1]
+        try:
+            hist = int(rest[2])
+        except:
+            hist = 0
+        if (len(rest) == 4):
+            cmd = rest[3]
+        else:
+            cmd = "n/a"
+        return (datestr, host, pwd, hist, cmd)
+    return None
 
 def parse_date(datestr):
     date = datetime.datetime.strptime(datestr, '%a %b %d %H:%M:%S %Z %Y ')
@@ -52,8 +52,8 @@ def parse_report(f, verbose):
         week=int(date.strftime("%V"))
         epoc = time.mktime(date.timetuple())
         break_time = epoc - last
-	def get_day(date):
-		return int(date.strftime("%d"))
+        def get_day(date):
+                return int(date.strftime("%d"))
 
         if last_start_date == None:
             last_start_date = date
@@ -73,14 +73,14 @@ def parse_report(f, verbose):
                 print
                 print "WEEK %d" % week
                 print "=================="
-		last_week_print = start
-		summary = 0
+                last_week_print = start
+                summary = 0
 
 #            if int(last_start_date.strftime("%d")) != int(end.strftime("%d")):
             if first_time or get_day(last_day_print) != get_day(start):
                 print start.strftime("== %a %b %d")
-		first_time = False
-		last_day_print = start
+                first_time = False
+                last_day_print = start
 
 #            print "diff: %d %0.2fh" % (diff, )
             length = (time.mktime(end.timetuple()) -
@@ -91,7 +91,7 @@ def parse_report(f, verbose):
                     last_start_date.strftime("%a %b %d %H:%M:%S"),
                     last_date.strftime("%a %b %d %H:%M:%S"),
                     break_time/3600.)
-		summary += length
+                summary += length
 
             last_start = epoc
             last_start_date = date
@@ -106,19 +106,19 @@ import argparse
 
 
 if __name__ == "__main__":
-	parser = argparse.ArgumentParser(description='Process ps log.')
-	parser.add_argument('-v', '--verbose', dest='verbose',
-			    action='store_true', help='Print all entries in pslog.')
+    parser = argparse.ArgumentParser(description='Process ps log.')
+    parser.add_argument('-v', '--verbose', dest='verbose',
+                action='store_true', help='Print all entries in pslog.')
 
-	parser.add_argument("file", nargs="?", help="file containing pslogs")
-
-
-	args = parser.parse_args()
+    parser.add_argument("file", nargs="?", help="file containing pslogs")
 
 
-	if args.file == None:
-		f = sys.stdin
-	else:
-		f=file(args.file[0], "r")
+    args = parser.parse_args()
 
-	parse_report(f, args.verbose)
+
+    if args.file == None:
+        f = sys.stdin
+    else:
+        f=file(args.file[0], "r")
+
+    parse_report(f, args.verbose)
