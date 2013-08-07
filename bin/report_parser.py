@@ -36,7 +36,7 @@ def parse_report(f, verbose):
     last_start_date = None
     ld = 0
     first_time = True
-    lines = [l for l in file(f).readlines()]
+    lines = [l for l in f.readlines()]
     for (i, l) in enumerate(lines):
         try:
             (datestr, host, pwd, hist, cmd) = get_datestr(l, "nobu2")
@@ -106,11 +106,15 @@ if __name__ == "__main__":
 	parser.add_argument('-v', '--verbose', dest='verbose',
 			    action='store_true', help='Print all entries in pslog.')
 
-	parser.add_argument("files", nargs="+", help="echo the string you use here")
+	parser.add_argument("file", nargs="?", help="file containing pslogs")
 
 
 	args = parser.parse_args()
-	print args.verbose
-	print args.files
 
-	parse_report(args.files[0], args.verbose)
+
+	if args.file == None:
+		f = sys.stdin
+	else:
+		f=file(args.file[0], "r")
+
+	parse_report(f, args.verbose)
