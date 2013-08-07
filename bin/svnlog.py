@@ -13,6 +13,22 @@ user="iholmqvi"
 #users=["vsharma", "gkhanna", "mbarthol"]
 users=["iholmqvi"]
 print
+
+class SvnEntry(object):
+    def __init__(self, date, author, paths, msg):
+        self.msg = msg
+        self.date = date
+        self.author = author
+        self.paths = paths
+        self.msg = msg
+
+    def __repr__(self):
+        return "%s %s" % (self.date, self.msg)
+
+def dprint(x):
+    if __name__ == "__main__":
+        print x
+
 class MyHTMLParser(HTMLParser):
     date=None
     user="error"
@@ -21,6 +37,7 @@ class MyHTMLParser(HTMLParser):
     lv=-1
     ld=-1
     highscore={}
+    entries = []
     def handle_data(self, data):
         self.last=data
     def handle_starttag(self, tag, x):
@@ -56,34 +73,41 @@ class MyHTMLParser(HTMLParser):
 #                sys.exit(0)
 
             if self.lv != v:
-                  print "Vecka %d (%s)" % (v , self.date.strftime("%Y"))
+                  print("Vecka %d (%s)" % (v , self.date.strftime("%Y")))
             self.lv=v
 
             d=int(self.date.strftime("%d"))
             if self.ld != d:
-                  print self.date.strftime("%A:")
+                dprint(self.date.strftime("%A:"))
             self.ld=d
-            print "  %s %s %s" % (self.date.strftime("%H:%M"), self.msg, self.date.strftime("(%d/%b)"))
+            dprint("  %s %s %s" % (self.date.strftime("%H:%M"), self.msg, self.date.strftime("(%d/%b)")))
 #            print (self.__dict__)
 #            if True:
             if False:
                 is_merge = self.msg.startswith("Merged") or self.msg.startswith("Blocked")
                 if not is_merge:
                     for x in self.files:
-                        print " - ", x
+                        dprint(" - %s" % x)
                 else:
-                    print " - No files shown for merge-like commits.";
+                    dprint(" - No files shown for merge-like commits.")
+            entry = SvnEntry(date = self.date,
+                             author = self.user,
+                             msg = self.msg,
+                             paths = self.files)
+            self.entries.append(entry)
 
+if __name__ == "__main__":
+    if len(sys.argv) == 1:
+        f=sys.stdin
+    else:
+        f=open(sys.argv[1])
 
+    apa=MyHTMLParser()
+    for line in f:
+        apa.feed(line)
 
-if len(sys.argv) == 1:
-    f=sys.stdin
-else:
-    f=open(sys.argv[1])
-
-apa=MyHTMLParser()
-for line in f:
-    apa.feed(line)
+# svn log --xml -v http://ala-svn.wrs.com/svn/Simics -r {2013-06-01}:HEAD
+#
 
 #for x in apa.highscore:
 #    print "%s = %s Svensson <%s@windriver.com>" % (x,x,x)
