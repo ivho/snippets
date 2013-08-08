@@ -24,7 +24,7 @@ class SvnEntry(object):
         self.rev = rev
 
     def __repr__(self):
-        return "r%d %s %s" % (self.rev, self.date, self.msg)
+        return "r%d %s %s %s" % (self.rev, self.author, self.date, self.msg)
 
 def dprint(x):
     if __name__ == "__main__":
