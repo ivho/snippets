@@ -48,7 +48,7 @@ class GitCommit(object):
     def __repr__(self):
         return "%s <%s> %s %s" % (self.cdate,
                                   self.author,
-                                  self.sha,
+                                  self.sha[:8],
                                   self.msg.strip())
 
 class GitActivity(object):
