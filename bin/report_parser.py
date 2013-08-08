@@ -35,9 +35,6 @@ class Activity():
     def set_end(self, end):
         self.end = end
 
-    def add_entry_old(self, date, host, pwd, cmd):
-        self.entries.append(Entry(date, host,pwd, cmd))
-
     def add_entry(self, entry):
         self.entries.append(entry)
 
@@ -95,8 +92,7 @@ def get_project_activities(entries):
         proj[prj] = get_activities(ee)
     return proj
 
-BREAK_TIME=3600.0*2
-def get_activities(entries):
+def get_activities(entries, break_time):
     all_activities = []
     start = entries[0].date
     last = get_epoch(start)
@@ -105,7 +101,7 @@ def get_activities(entries):
     for entry in entries:
         act.add_entry(entry)
         break_time = get_epoch(entry.date) - get_epoch(prev)
-        if break_time > BREAK_TIME:
+        if break_time > break_time:
             act.set_end(prev)
             all_activities.append(act)
             act = Activity(entry.date)
