@@ -5,6 +5,8 @@ from django.conf.urls import patterns, include, url
 # admin.autodiscover()
 
 urlpatterns = patterns('',
+#    (r"^mark_done/(\d*)/$", "testing.views.mark_done"),
+    (r"$", "testing.views.main"),
     # Examples:
     # url(r'^$', 'timereport.views.home', name='home'),
     # url(r'^timereport/', include('timereport.foo.urls')),
