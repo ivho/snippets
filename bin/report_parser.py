@@ -23,12 +23,13 @@ class Entry(object):
         self.host = host
         self.pwd = pwd
         self.cmd = cmd
+        self.epoch = int(date.strftime("%s"))
 
     def __repr__(self):
-        return "%s %s %s" % (self.date.__str__(), self.pwd, self.cmd)
+        return "%s %s %s %s" % (self.date.__str__(), self.host, self.pwd, self.cmd.strip())
 
     def new_style(self):
-        return "1:%s:%s:%s:%s" % (self.date.strftime("%s"),
+        return "1:%s:%s:%s:%s" % (self.epoch,
                                   self.host,
                                   self.pwd,
                                   self.cmd.strip())
@@ -48,12 +49,36 @@ class Activity():
         return (time.mktime(self.end.timetuple()) -
                 time.mktime(self.start.timetuple()))
 
+    def time_between(self, next):
+        return (time.mktime(next.start.timetuple()) -
+                time.mktime(self.end.timetuple()))
+
     def __repr__(self):
         return "%0.2fh %s -> %s (%d entries)" % (
             self.length()/3600.,
             self.start.strftime("%H:%M"),
             self.end.strftime("%H:%M"),
             len(self.entries))
+
+    def get_proj_stats(self):
+        ret = []
+        for prj in [prj for (prj, l) in project_dirs] + ["other"]:
+            cnt = 0
+            for e in self.entries:
+                if pwd_to_proj(e.pwd) == prj:
+                    cnt += 1
+            if cnt > 0:
+                ret.append((prj, cnt))
+        return ret
+
+    def get_host_stats(self):
+        ret = {}
+        for e in self.entries:
+            if not e.host in ret:
+                ret[e.host] = 1
+            else:
+                ret[e.host] += 1
+        return ret
 
     def week(self):
         return int(self.start.strftime("%V"))
@@ -62,16 +87,23 @@ def get_epoch(date):
     return time.mktime(date.timetuple())
 
 class ShellActivityParser(object):
-    def __init__(self, filename, break_time):
-        f = file(filename, "r")
+    def __init__(self, break_time):
+        self.break_time = break_time
         self.entries = []
+
+    def add_entries(self, filename):
+        skipped = 0
+        print "Add %s" % filename
+        f = file(filename, "r")
         for l in f.readlines():
             e = self.parse_line(l)
             if e != None:
                 self.entries.append(e)
-
-        print self.entries[0]
-        self.break_time = break_time
+            else:
+                skipped += 1
+        self.entries.sort(key = lambda a:a.epoch)
+        print len(self.entries)
+        print "Skipped %d entries for %s" % (skipped, filename)
 
     @staticmethod
     def convert_old(fn):
@@ -104,6 +136,8 @@ class ShellActivityParser(object):
 
     def parse_line(self, l):
         try:
+            if l.strip() == "":
+                return None
             rev = int(l.split(":", 1)[0])
             #rev 1, rev:epoch:hostname:pwd:cmd
             if rev == 1:
@@ -118,14 +152,6 @@ class ShellActivityParser(object):
             raise Exception("Unable to parse <%s>" % l.strip())
         return None
 
-
-
-    def get_project_activities(self, entries):
-        proj = {}
-        for prj in [prj for (prj, l) in project_dirs] + ["other"]:
-            ee = [e for e in entries if pwd_to_proj(e.pwd) == prj]
-            proj[prj] = get_activities(ee)
-        return proj
 
     def get_activities(self):
         all_activities = []
