@@ -27,6 +27,12 @@ class Entry(object):
     def __repr__(self):
         return "%s %s %s" % (self.date.__str__(), self.pwd, self.cmd)
 
+    def new_style(self):
+        return "1:%s:%s:%s:%s" % (self.date.strftime("%s"),
+                                  self.host,
+                                  self.pwd,
+                                  self.cmd.strip())
+
 class Activity():
     def __init__(self, start):
         self.start = start
@@ -63,36 +69,55 @@ class ShellActivityParser(object):
             e = self.parse_line(l)
             if e != None:
                 self.entries.append(e)
-        print "LEN", len(self.entries)
+
         print self.entries[0]
         self.break_time = break_time
 
+    @staticmethod
+    def convert_old(fn):
+        def parse_date(datestr):
+            date = datetime.datetime.strptime(datestr, '%a %b %d %H:%M:%S %Z %Y ')
+            return date
+
+        for l in file(fn,"r").readlines():
+            split = l.split("host:")
+            if len(split) > 1:
+                datestr = split[0]
+                rest=split[1].split(" ", 3)
+                if len(rest) < 3:
+                    raise ValueError
+                host = rest[0]
+                pwd = rest[1].split(":")[1]
+                try:
+                    hist = int(rest[2])
+                except:
+                    hist = 0
+                if (len(rest) == 4):
+                    cmd = rest[3]
+                else:
+                    cmd = "n/a"
+                e = Entry(date = parse_date(datestr),
+                          host = host,
+                          pwd = pwd,
+                          cmd = cmd)
+                print e.new_style()
+
     def parse_line(self, l):
-        split = l.split("host:")
-        if len(split) > 1:
-            datestr = split[0]
-            rest=split[1].split(" ", 3)
-            if len(rest) < 3:
-                raise ValueError
-            host = rest[0]
-            pwd = rest[1].split(":")[1]
-            try:
-                hist = int(rest[2])
-            except:
-                hist = 0
-            if (len(rest) == 4):
-                cmd = rest[3]
-            else:
-                cmd = "n/a"
-            return Entry(date = self.parse_date(datestr),
-                         host = host,
-                         pwd = pwd,
-                         cmd = cmd)
+        try:
+            rev = int(l.split(":", 1)[0])
+            #rev 1, rev:epoch:hostname:pwd:cmd
+            if rev == 1:
+                parts = l.split(":", 5)
+                date = datetime.datetime.fromtimestamp(int(parts[1]))
+                entry = Entry(date = date,
+                              host = parts[2],
+                              pwd = parts[3],
+                              cmd = parts[4])
+                return entry
+        except IndexError:
+            raise Exception("Unable to parse <%s>" % l.strip())
         return None
 
-    def parse_date(self, datestr):
-        date = datetime.datetime.strptime(datestr, '%a %b %d %H:%M:%S %Z %Y ')
-        return date
 
 
     def get_project_activities(self, entries):
