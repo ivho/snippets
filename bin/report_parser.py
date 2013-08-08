@@ -61,33 +61,38 @@ class Activity():
             self.end.strftime("%H:%M"),
             len(self.entries))
 
-    def get_proj_stats(self):
-        ret = {}
-        for e in self.entries:
-            if not e.proj in ret:
-                ret[e.proj] = 1
+    class CountingDict(object):
+        def __init__(self):
+            self.dict = {}
+
+        def add(self, x):
+            if not x in self.dict:
+                self.dict[x] = 1
             else:
-                ret[e.proj] += 1
-        return ret
+                self.dict[x] += 1
+
+        def sorted_result(self, reverse = True):
+            return sorted(list(self.dict.iteritems()),
+                          key = lambda a:a[1],
+                          reverse = reverse)
+
+    def get_proj_stats(self):
+        d = self.CountingDict()
+        for e in self.entries:
+            d.add(e.proj)
+        return d.sorted_result()
 
     def get_host_stats(self):
-        ret = {}
+        d = self.CountingDict()
         for e in self.entries:
-            if not e.host in ret:
-                ret[e.host] = 1
-            else:
-                ret[e.host] += 1
-        return ret
+            d.add(e.host)
+        return d.sorted_result()
 
     def pwd_in_proj(self, proj):
-        ret = {}
-        for e in self.entries:
-            if e.proj == proj:
-                if not e.pwd in ret:
-                    ret[e.pwd] = 1
-                else:
-                    ret[e.pwd] += 1
-        return ret
+        pwds = self.CountingDict()
+        for e in filter(lambda a:a.proj == proj, self.entries):
+            pwds.add(e.pwd)
+        return pwds.sorted_result()
 
     def week(self):
         return int(self.start.strftime("%V"))

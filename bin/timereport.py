@@ -20,7 +20,7 @@ def date_str(date):
     return date.strftime("%F")
 
 
-def show_report(year, week, activities, svnentries):
+def show_report(year, week, activities, svnentries, verbose):
     print "WEEK %d" % week
     print "========="
     weeksum = 0
@@ -42,22 +42,30 @@ def show_report(year, week, activities, svnentries):
         sumact = 0
         for (i, a) in enumerate(activities):
             if date_str(d) == date_str(a.start):
-                print "  %s" % a
+                print "  ** %s **" % a
                 sumact += a.length()
-                print "   host stats:",
-                for (h, cnt) in a.get_host_stats().iteritems():
-                    print "%s:%d%%(%d) " % (h, 100*cnt/len(a.entries), cnt),
-                print
+                if verbose > 0:
+                    print "   host stats:",
+                    for (h, cnt) in a.get_host_stats():
+                        print "%s:%d%%(%d) " % (h, 100*cnt/len(a.entries), cnt),
+                    print
 
-                print "   proj stats:",
-                for (prj, cnt) in a.get_proj_stats().iteritems():
-                    print "%s:%d(%d%%) " % (prj, cnt, 100*cnt/len(a.entries)),
-                print
+                    print "   proj stats:",
+                    for (prj, cnt) in a.get_proj_stats():
+                        print "%s:%d(%d%%) " % (prj, cnt, 100*cnt/len(a.entries)),
+                    print
 
-                other_pwd = a.pwd_in_proj("other")
-                for (pwd, cnt) in other_pwd.iteritems():
-                    print "    % 3d:%s" % (cnt, pwd)
+                if verbose > 1:
+                    projs = [p[0] for p in a.get_proj_stats()]
+                    for prj in projs:
+                        other_pwd = a.pwd_in_proj(prj)
+                        print "    PWD:", prj
+                        for (pwd, cnt) in other_pwd:
+                            print "    % 3d:%s" % (cnt, pwd)
 
+                if verbose > 2:
+                    for e in a.entries:
+                        print "    ", e
                 if i+1 < len(activities):
                     print "   break %0.2fh" % (a.time_between(activities[i+1])/3600.)
         print "  sum: %0.2fh" % (sumact/3600.)
@@ -69,7 +77,7 @@ def show_report(year, week, activities, svnentries):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Create timereport.')
     parser.add_argument('-v', '--verbose', dest='verbose',
-                action='store_true', help='Print all entries in pslog.')
+                action='count', help='Print all entries in pslog.')
 
     parser.add_argument("--psfile", dest = "psfile", action = 'append', nargs="?", help="File containing pslogs.")
     parser.add_argument("--svnfile", dest = "svnfile", nargs="?", help="File containing svn xml log.", default = None)
@@ -98,4 +106,5 @@ if __name__ == "__main__":
     show_report(2013,
                 args.week,
                 activities = activities,
-                svnentries = svnentries)
+                svnentries = svnentries,
+                verbose = args.verbose)
