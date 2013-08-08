@@ -56,6 +56,10 @@ def show_report(year, week, activities, svnentries, verbose, gitcommits):
             print "  GIT: None"
 
         sumact = 0
+        if len(activities) != 0:
+            print "  SHELL:"
+        else:
+            print "  SHELL: None"
         for (i, a) in enumerate(activities):
             if date_str(d) == date_str(a.start):
                 if i+1 < len(activities):
