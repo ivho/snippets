@@ -31,12 +31,13 @@ def show_report(year, week, activities, svnentries, verbose, gitcommits):
         if entries:
             print "  SVN:"
             for e in entries:
-                print "   %s <%s>" % (e.date.strftime("%H:%M:%S"), e.msg)
-                if not e.msg.startswith("Merge") and len(e.paths)<10:
-                    for f in e.paths:
-                        print "     - ", f
-                else:
-                    print "       (merge?)"
+                print "   %s r%d <%s>" % (e.date.strftime("%H:%M:%S"), e.rev, e.msg)
+                if verbose > 1:
+                    if not e.msg.startswith("Merge") and len(e.paths)<10:
+                        for f in e.paths:
+                            print "     - ", f
+                    else:
+                        print "       (merge?)"
         else:
             print "  SVN: None"
 
@@ -46,12 +47,12 @@ def show_report(year, week, activities, svnentries, verbose, gitcommits):
         if len(commits) != 0:
             print "  GIT:"
             for commit in commits:
-                print "  - %s %s %s" % (commit.adate.strftime("%H:%M"),
+                print "   %s %s <%s>" % (commit.adate.strftime("%H:%M:%S"),
                                                 commit.sha[:8],
                                                 commit.msg.strip())
                 if verbose > 1:
                     for f in commit.get_files():
-                        print "     %s" % f
+                        print "     - ", f
         else:
             print "  GIT: None"
 
