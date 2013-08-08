@@ -1,50 +1,82 @@
 #!/usr/bin/python
 import sys
 import datetime
-import os
-from time import strptime
-from email.utils import parsedate_tz
-#print parsedate_tz('Fri, 15 May 2009 17:58:28 +0700')
+import subprocess
+
+def git_cmd(gitdir, cmd, opts):
+        cmdlist = ["git",
+                   "--git-dir=%s/.git" % gitdir,
+                   cmd] + opts
+
+        x=subprocess.Popen(cmdlist,
+                           stderr=subprocess.PIPE,
+                           stdout=subprocess.PIPE)
+        (o,e)=x.communicate()
+        if x.returncode != 0:
+            print e
+            raise Exception("GIT ERROR")
+        return o
+
+class GitCommit(object):
+    def __init__(self, gitdir, gitall, sha, cdate, adate, author, msg):
+        self.sha = sha
+        self.gitall = gitall
+        self.cdate = datetime.datetime.fromtimestamp(cdate)
+        self.adate = datetime.datetime.fromtimestamp(adate)
+        self.author = author
+        self.msg = msg
+        # Keep git gitdir so we can fetch more complex
+        # info (with git_cmd) on specific commits later if needed.
+        self.gitdir = gitdir
+
+    def get_files(self):
+        return filter(lambda a:a!="",
+                      git_cmd(self.gitdir,
+                              "diff-tree",
+                              ["--no-commit-id",
+                               "--name-only",
+                               "-r", self.sha]).split("\n"))
+    def get_branches(self):
+        res = git_cmd(self.gitdir,
+                      "branch",
+                      ["--list",
+                       "--all",
+                       "--contains",
+                       self.sha])
+        return "|".join(res.split("\n"))
+
+    def __repr__(self):
+        return "%s <%s> %s %s" % (self.cdate,
+                                  self.author,
+                                  self.sha,
+                                  self.msg.strip())
+
+class GitActivity(object):
+    def __init__(self, gitdir, gitall, reponame = None):
+        self.commits = []
+        self.gitdir = gitdir
+        self.gitall = ["--all"] if gitall else []
+        self.user_email = git_cmd(gitdir, "config",
+                                  ["--get","user.email"]
+                                  ).strip()
+        self.user_name = git_cmd(gitdir, "config",
+                                  ["--get","user.name"]
+                                  ).strip()
+
+        o = git_cmd(gitdir, "log", self.gitall +
+                    ["--format=format:%ct:%at:%H:%ae:%s"])
+        for l in o.split("\n"):
+            (ct,at,sha,author,msg) = l.split(":", 4)
+            ge = GitCommit(sha = sha,
+                           adate = int(at),
+                           cdate = int(ct),
+                           author = author,
+                           msg = msg,
+                           gitdir = gitdir,
+                           gitall = self.gitall)
+            self.commits.append(ge)
 
 if __name__ == "__main__":
-    os.system("rm /tmp/timerep.ivho")
-#    dirs = ["qsp", "u-boot", "linux_qsp", "vxworks_qsp", "Simics"]
-    dirs = ["totoro_simics", "linux-totoro", "u-boot-totoro"]
-    base = "/space/work/simics/totoro"
-    for proj in dirs:
-        os.system("(cd %s/%s ; git log --date=short --format=format:'%%at|%%an|%s|%%s'  --date=local --since=2012-01 >> /tmp/timerep.ivho ; echo >> /tmp/timerep.ivho )" %
-                  (base, proj, proj))
-        os.system("")
-    os.system("sort -nr /tmp/timerep.ivho > /tmp/timerep.sorted")
-    f=file("/tmp/timerep.sorted")
-    lastweek = -1
-    ld=-1
-    while True:
-        xx=f.readline()
-        if len(xx) == 0:
-            break
-#        print xx
-        (sdate,author,proj,msg)=xx.split('|')
-
-#        print proj, sdate, author, msg
-        if not (author.startswith("Ivar") or author.startswith("iholmqvi")):
-#            print "skip"
-            continue
-#        sdate=x[0]
-        try:
-#            datetime.datetime(*strptime(sdate,"%Y-%m-%d")[0:6])
-            date = datetime.datetime.utcfromtimestamp(int(sdate))
-#            date=parsedate_tz(sdate)
-            w=int(date.strftime("%V"))
-            if w != lastweek:
-                print "Vecka %d" % w
-            lastweek=w
-
-            d=int(date.strftime("%d"))
-            if ld != d:
-                  print date.strftime("%A %d/%b:")
-            ld=d
-            print "  %s <%s> %s" % (date.strftime("%H:%M"), proj, msg.strip())
-
-        except IndexError:
-            break
+    ga = GitActivity(sys.argv[1], True)
+    for a in ga.commits:
+        print a
