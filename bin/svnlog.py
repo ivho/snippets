@@ -15,15 +15,16 @@ users=["iholmqvi"]
 print
 
 class SvnEntry(object):
-    def __init__(self, date, author, paths, msg):
+    def __init__(self, date, author, paths, msg, rev):
         self.msg = msg
         self.date = date
         self.author = author
         self.paths = paths
         self.msg = msg
+        self.rev = rev
 
     def __repr__(self):
-        return "%s %s" % (self.date, self.msg)
+        return "r%d %s %s" % (self.rev, self.date, self.msg)
 
 def dprint(x):
     if __name__ == "__main__":
@@ -43,6 +44,9 @@ class MyHTMLParser(HTMLParser):
     def handle_starttag(self, tag, x):
         if tag == "logentry":
             self.files = []
+            for (attr, val) in x:
+                if attr == 'revision':
+                    self.rev = int(val)
 
     def handle_endtag(self, tag):
         if tag == "date":
@@ -93,7 +97,8 @@ class MyHTMLParser(HTMLParser):
             entry = SvnEntry(date = self.date,
                              author = self.user,
                              msg = self.msg,
-                             paths = self.files)
+                             paths = self.files,
+                             rev = self.rev)
             self.entries.append(entry)
 
 if __name__ == "__main__":
