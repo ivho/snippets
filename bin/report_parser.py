@@ -6,6 +6,27 @@ import rfc822
 import time
 YEAR=2013
 
+project_dirs = [("Totoro", ["/space/work/simics/totoro",
+                            "/space/ivho/totoro"]),
+                ("SVN", ["/space/work/simics/svn",
+                         "/space/ivho/svn"])]
+def pwd_to_proj(pwd):
+    for (p, l) in project_dirs:
+        for d in l:
+            if pwd.startswith(d):
+                return p
+    return "other"
+
+class Entry(object):
+    def __init__(self, date, host, pwd, cmd):
+        self.date = date
+        self.host = host
+        self.pwd = pwd
+        self.cmd = cmd
+
+    def __repr__(self):
+        return "%s %s %s" % (self.date.__str__(), self.pwd, self.cmd)
+
 class Activity():
     def __init__(self, start):
         self.start = start
@@ -14,23 +35,27 @@ class Activity():
     def set_end(self, end):
         self.end = end
 
-    def add_entry(self, date, host, pwd, cmd):
-        self.entries.append((date, host,pwd, cmd))
+    def add_entry_old(self, date, host, pwd, cmd):
+        self.entries.append(Entry(date, host,pwd, cmd))
+
+    def add_entry(self, entry):
+        self.entries.append(entry)
 
     def length(self):
         return (time.mktime(self.end.timetuple()) -
                 time.mktime(self.start.timetuple()))
 
     def __repr__(self):
-        return "activity: %0.2fh %s -> %s" % (
+        return "%0.2fh %s -> %s (%d entries)" % (
             self.length()/3600.,
-            self.start.strftime("%a %b %d %H:%M:%S"),
-            self.end.strftime("%a %b %d %H:%M:%S"))
+            self.start.strftime("%H:%M"),
+            self.end.strftime("%H:%M"),
+            len(self.entries))
 
     def week(self):
         return int(self.start.strftime("%V"))
 
-def get_datestr(l, hostname):
+def parse_line(l):
     split = l.split("host:")
     if len(split) > 1:
         datestr = split[0]
@@ -47,12 +72,47 @@ def get_datestr(l, hostname):
             cmd = rest[3]
         else:
             cmd = "n/a"
-        return (datestr, host, pwd, hist, cmd)
+        return Entry(date = parse_date(datestr),
+                     host = host,
+                     pwd = pwd,
+                     cmd = cmd)
     return None
 
 def parse_date(datestr):
     date = datetime.datetime.strptime(datestr, '%a %b %d %H:%M:%S %Z %Y ')
     return date
+
+def all_entries(f):
+    return [parse_line(l) for l in f.readlines()]
+
+def get_epoch(date):
+    return time.mktime(date.timetuple())
+
+def get_project_activities(entries):
+    proj = {}
+    for prj in [prj for (prj, l) in project_dirs] + ["other"]:
+        ee = [e for e in entries if pwd_to_proj(e.pwd) == prj]
+        proj[prj] = get_activities(ee)
+    return proj
+
+BREAK_TIME=3600.0*2
+def get_activities(entries):
+    all_activities = []
+    start = entries[0].date
+    last = get_epoch(start)
+    act = Activity(start)
+    prev = start
+    for entry in entries:
+        act.add_entry(entry)
+        break_time = get_epoch(entry.date) - get_epoch(prev)
+        if break_time > BREAK_TIME:
+            act.set_end(prev)
+            all_activities.append(act)
+            act = Activity(entry.date)
+            start = entry.date
+        prev = entry.date
+
+    return all_activities
 
 def parse_report(f, verbose):
     weeks=[]
@@ -67,6 +127,7 @@ def parse_report(f, verbose):
     all_activities = []
     act = None
     for (i, l) in enumerate(lines):
+
         try:
             (datestr, host, pwd, hist, cmd) = get_datestr(l, "nobu2")
         except TypeError:
@@ -84,7 +145,7 @@ def parse_report(f, verbose):
             act = Activity(date)
 
         def get_day(date):
-                return int(date.strftime("%d"))
+            return int(date.strftime("%d"))
 
         if last_start_date == None:
             last_start_date = date
