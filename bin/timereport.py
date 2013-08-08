@@ -42,7 +42,12 @@ def show_report(year, week, activities, svnentries, verbose):
         sumact = 0
         for (i, a) in enumerate(activities):
             if date_str(d) == date_str(a.start):
-                print "  ** %s **" % a
+                if i+1 < len(activities):
+                    br = "break %0.2fh" % (a.time_between(activities[i+1])/3600.)
+                else:
+                    br = "last entry"
+                print "  ** %s (%s)" % (a, br)
+
                 sumact += a.length()
                 if verbose > 0:
                     print "   host stats:",
@@ -66,8 +71,6 @@ def show_report(year, week, activities, svnentries, verbose):
                 if verbose > 2:
                     for e in a.entries:
                         print "    ", e
-                if i+1 < len(activities):
-                    print "   break %0.2fh" % (a.time_between(activities[i+1])/3600.)
         print "  sum: %0.2fh" % (sumact/3600.)
 
         weeksum += sumact
