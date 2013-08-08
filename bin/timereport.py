@@ -5,6 +5,7 @@ import datetime
 
 import svnlog
 import report_parser
+import gitlog
 
 def get_days_in_week(year, week):
     days = []
@@ -20,7 +21,7 @@ def date_str(date):
     return date.strftime("%F")
 
 
-def show_report(year, week, activities, svnentries, verbose):
+def show_report(year, week, activities, svnentries, verbose, gitcommits):
     print "WEEK %d" % week
     print "========="
     weeksum = 0
@@ -38,6 +39,21 @@ def show_report(year, week, activities, svnentries, verbose):
                     print "       (merge?)"
         else:
             print "  SVN: None"
+
+        commits = [e for e in gitcommits
+                   if date_str(e.adate) == date_str(d)]
+        commits.sort(key = lambda a:a.adate)
+        if len(commits) != 0:
+            print "  GIT:"
+            for commit in commits:
+                print "  - %s %s %s" % (commit.adate.strftime("%H:%M"),
+                                                commit.sha[:8],
+                                                commit.msg.strip())
+                if verbose > 1:
+                    for f in commit.get_files():
+                        print "     %s" % f
+        else:
+            print "  GIT: None"
 
         sumact = 0
         for (i, a) in enumerate(activities):
@@ -77,14 +93,52 @@ def show_report(year, week, activities, svnentries, verbose):
         print
     print "WEEKSUM: %0.2fh" % (weeksum/3600.)
 
+class FlatAppend(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest,  getattr(namespace, self.dest) + values)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Create timereport.')
-    parser.add_argument('-v', '--verbose', dest='verbose',
-                action='count', help='Print all entries in pslog.')
+    parser.add_argument('-v', '--verbose',
+                        dest='verbose',
+                        action='count',
+                        help='Print all entries in pslog.')
 
-    parser.add_argument("--psfile", dest = "psfile", action = 'append', nargs="?", help="File containing pslogs.")
-    parser.add_argument("--svnfile", dest = "svnfile", nargs="?", help="File containing svn xml log.", default = None)
-    parser.add_argument("--week", dest = "week", help="Which week to produce log for.", type = int)
+    parser.add_argument("-p", "--psfile",
+                        dest = "psfile",
+                        action = FlatAppend,
+                        nargs='+',
+                        help="File containing pslogs.",
+                        default = [])
+
+    parser.add_argument("-g", "--git-dir",
+                        dest = "gitdirs",
+                        action = FlatAppend,
+                        nargs='+',
+                        help="Directory containing a git repo (not bare).",
+                        default = [])
+
+    parser.add_argument("--git-all",
+                        dest = "gitall",
+                        help="Collect git entries with --all option to log.",
+                        action = "store_true",
+                        default = False)
+
+    parser.add_argument("-s", "--svnfile",
+                        dest = "svnfile",
+                        nargs=1,
+                        help="File containing svn xml log.",
+                        default = None)
+
+
+    parser.add_argument("--week",
+                        nargs = '+',
+                        dest = "week",
+                        type = int,
+                        required = True,
+                        action = "store",
+                        help="Which weeks to produce reports for.")
+
     parser.add_argument("--break-time", dest = "break_time", help="How long is a break.", default=3600., type = float)
 
     args = parser.parse_args()
@@ -106,8 +160,15 @@ if __name__ == "__main__":
 #        proj_act = report_parser.get_project_activities(entries, )
     activities = psact.get_activities()
 
-    show_report(2013,
-                args.week,
-                activities = activities,
-                svnentries = svnentries,
-                verbose = args.verbose)
+    commits = []
+    for gitdir in args.gitdirs:
+        ga = gitlog.GitActivity(gitdir, args.gitall)
+        commits += ga.commits
+
+    for week in args.week:
+        show_report(2013,
+                    week,
+                    activities = activities,
+                    svnentries = svnentries,
+                    verbose = args.verbose,
+                    gitcommits = commits)
