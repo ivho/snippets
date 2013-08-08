@@ -112,8 +112,8 @@ class ShellActivityParser(object):
             else:
                 skipped += 1
         self.entries.sort(key = lambda a:a.epoch)
-        print len(self.entries)
-        print "Skipped %d entries for %s" % (skipped, filename)
+        if skipped > 1:
+            print "Skipped %d entries for %s" % (skipped, filename)
 
     @staticmethod
     def convert_old(fn):
