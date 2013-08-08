@@ -79,6 +79,16 @@ class Activity():
                 ret[e.host] += 1
         return ret
 
+    def pwd_in_proj(self, proj):
+        ret = {}
+        for e in self.entries:
+            if e.proj == proj:
+                if not e.pwd in ret:
+                    ret[e.pwd] = 1
+                else:
+                    ret[e.pwd] += 1
+        return ret
+
     def week(self):
         return int(self.start.strftime("%V"))
 
