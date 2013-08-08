@@ -107,7 +107,7 @@ if __name__ == "__main__":
     parser.add_argument('-v', '--verbose',
                         dest='verbose',
                         action='count',
-                        help='Print all entries in pslog.')
+                        help='Verbose(r) reports, specify multiple times for even more verbose report.')
 
     parser.add_argument("-p", "--psfile",
                         dest = "psfile",
@@ -123,7 +123,7 @@ if __name__ == "__main__":
                         help="Directory containing a git repo (not bare).",
                         default = [])
 
-    parser.add_argument("--git-all",
+    parser.add_argument("-a", "--git-all",
                         dest = "gitall",
                         help="Collect git entries with --all option to log.",
                         action = "store_true",
@@ -131,22 +131,31 @@ if __name__ == "__main__":
 
     parser.add_argument("-s", "--svnfile",
                         dest = "svnfile",
-                        nargs=1,
-                        help="File containing svn xml log.",
+                        action = "store",
+                        nargs='?',
+                        help="File containing svn xml log. Use keyword \"show\" to get an example svn command line",
                         default = None)
 
+    parser.add_argument("-b", "--break-time",
+                        dest = "break_time",
+                        help="How long is a break in seconds.",
+                        default=3600.,
+                        type = float)
 
     parser.add_argument("--week",
                         nargs = '+',
                         dest = "week",
-                        type = int,
-                        required = True,
                         action = "store",
-                        help="Which weeks to produce reports for.")
+                        help="Which weeks to produce reports for.",
+                        default = ["last"])
 
-    parser.add_argument("--break-time", dest = "break_time", help="How long is a break.", default=3600., type = float)
 
     args = parser.parse_args()
+    if args.svnfile == "show":
+        twoweeksback=(datetime.datetime.now()-datetime.timedelta(14))
+        print "# svn log since 2 weeks back:"
+        print "svn log --xml -v http://ala-svn.wrs.com/svn/Simics -r {%s}:HEAD" % (twoweeksback.strftime("%F"))
+        sys.exit(0)
 
     if args.svnfile != None:
         f=open(args.svnfile, "r")
@@ -171,6 +180,19 @@ if __name__ == "__main__":
         commits += ga.commits
 
     for week in args.week:
+        curw = int(datetime.datetime.now().strftime("%V"))
+        if week == "last":
+            week = int((datetime.datetime.now()-datetime.timedelta(7))
+                       .strftime("%V"))
+        elif week == "current":
+            week = int(datetime.datetime.now().strftime("%V"))
+        else:
+            try:
+                week = int(week)
+            except ValueError:
+                sys.stderr.write("--week expects an integer, \"last\" or \"current\"\nNot <%s>\n" % week)
+                sys.exit(1)
+
         show_report(2013,
                     week,
                     activities = activities,
