@@ -117,5 +117,8 @@ class ShellActivityParser(object):
                 act = Activity(entry.date)
                 start = entry.date
             prev = entry.date
+        #Last entry always closes the activity, can't expect break..
+        act.set_end(prev)
+        all_activities.append(act)
 
         return all_activities
