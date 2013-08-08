@@ -24,6 +24,7 @@ class Entry(object):
         self.pwd = pwd
         self.cmd = cmd
         self.epoch = int(date.strftime("%s"))
+        self.proj = pwd_to_proj(pwd)
 
     def __repr__(self):
         return "%s %s %s %s" % (self.date.__str__(), self.host, self.pwd, self.cmd.strip())
@@ -61,14 +62,12 @@ class Activity():
             len(self.entries))
 
     def get_proj_stats(self):
-        ret = []
-        for prj in [prj for (prj, l) in project_dirs] + ["other"]:
-            cnt = 0
-            for e in self.entries:
-                if pwd_to_proj(e.pwd) == prj:
-                    cnt += 1
-            if cnt > 0:
-                ret.append((prj, cnt))
+        ret = {}
+        for e in self.entries:
+            if not e.proj in ret:
+                ret[e.proj] = 1
+            else:
+                ret[e.proj] += 1
         return ret
 
     def get_host_stats(self):

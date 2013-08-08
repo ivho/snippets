@@ -50,7 +50,7 @@ def show_report(year, week, activities, svnentries):
                 print
 
                 print "   proj stats:",
-                for (prj, cnt) in a.get_proj_stats():
+                for (prj, cnt) in a.get_proj_stats().iteritems():
                     print "%s:%d(%d%%) " % (prj, cnt, 100*cnt/len(a.entries)),
                 print
                 if i+1 < len(activities):
