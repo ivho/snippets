@@ -94,9 +94,6 @@ class Activity():
             pwds.add(e.pwd)
         return pwds.sorted_result()
 
-    def week(self):
-        return int(self.start.strftime("%V"))
-
 def get_epoch(date):
     return time.mktime(date.timetuple())
 
