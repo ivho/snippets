@@ -104,7 +104,6 @@ class ShellActivityParser(object):
 
     def add_entries(self, filename):
         skipped = 0
-        print "Add %s" % filename
         f = file(filename, "r")
         for l in f.readlines():
             e = self.parse_line(l)
@@ -165,6 +164,8 @@ class ShellActivityParser(object):
 
 
     def get_activities(self):
+        if len(self.entries) == 0:
+            return []
         all_activities = []
         start = self.entries[0].date
         last = get_epoch(start)
