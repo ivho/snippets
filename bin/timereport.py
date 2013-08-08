@@ -78,12 +78,10 @@ if __name__ == "__main__":
         svnentries = []
 
     if args.psfile != None:
-        f=open(args.psfile, "r")
-        entries = report_parser.all_entries(f)
-        print len(entries)
-#        activities = report_parser.get_activities(entries)
-        activities = []
-        proj_act = report_parser.get_project_activities(entries, )
+        psact=report_parser.ShellActivityParser(args.psfile, args.break_time)
+#        proj_act = report_parser.get_project_activities(entries, )
+        proj_act = {}
+        activities = psact.get_activities()
     else:
         activities = []
 

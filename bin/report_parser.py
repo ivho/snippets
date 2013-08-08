@@ -52,60 +52,70 @@ class Activity():
     def week(self):
         return int(self.start.strftime("%V"))
 
-def parse_line(l):
-    split = l.split("host:")
-    if len(split) > 1:
-        datestr = split[0]
-        rest=split[1].split(" ", 3)
-        if len(rest) < 3:
-            raise ValueError
-        host = rest[0]
-        pwd = rest[1].split(":")[1]
-        try:
-            hist = int(rest[2])
-        except:
-            hist = 0
-        if (len(rest) == 4):
-            cmd = rest[3]
-        else:
-            cmd = "n/a"
-        return Entry(date = parse_date(datestr),
-                     host = host,
-                     pwd = pwd,
-                     cmd = cmd)
-    return None
-
-def parse_date(datestr):
-    date = datetime.datetime.strptime(datestr, '%a %b %d %H:%M:%S %Z %Y ')
-    return date
-
-def all_entries(f):
-    return [parse_line(l) for l in f.readlines()]
-
 def get_epoch(date):
     return time.mktime(date.timetuple())
 
-def get_project_activities(entries):
-    proj = {}
-    for prj in [prj for (prj, l) in project_dirs] + ["other"]:
-        ee = [e for e in entries if pwd_to_proj(e.pwd) == prj]
-        proj[prj] = get_activities(ee)
-    return proj
+class ShellActivityParser(object):
+    def __init__(self, filename, break_time):
+        f = file(filename, "r")
+        self.entries = []
+        for l in f.readlines():
+            e = self.parse_line(l)
+            if e != None:
+                self.entries.append(e)
+        print "LEN", len(self.entries)
+        print self.entries[0]
+        self.break_time = break_time
 
-def get_activities(entries, break_time):
-    all_activities = []
-    start = entries[0].date
-    last = get_epoch(start)
-    act = Activity(start)
-    prev = start
-    for entry in entries:
-        act.add_entry(entry)
-        break_time = get_epoch(entry.date) - get_epoch(prev)
-        if break_time > break_time:
-            act.set_end(prev)
-            all_activities.append(act)
-            act = Activity(entry.date)
-            start = entry.date
-        prev = entry.date
+    def parse_line(self, l):
+        split = l.split("host:")
+        if len(split) > 1:
+            datestr = split[0]
+            rest=split[1].split(" ", 3)
+            if len(rest) < 3:
+                raise ValueError
+            host = rest[0]
+            pwd = rest[1].split(":")[1]
+            try:
+                hist = int(rest[2])
+            except:
+                hist = 0
+            if (len(rest) == 4):
+                cmd = rest[3]
+            else:
+                cmd = "n/a"
+            return Entry(date = self.parse_date(datestr),
+                         host = host,
+                         pwd = pwd,
+                         cmd = cmd)
+        return None
 
-    return all_activities
+    def parse_date(self, datestr):
+        date = datetime.datetime.strptime(datestr, '%a %b %d %H:%M:%S %Z %Y ')
+        return date
+
+
+    def get_project_activities(self, entries):
+        proj = {}
+        for prj in [prj for (prj, l) in project_dirs] + ["other"]:
+            ee = [e for e in entries if pwd_to_proj(e.pwd) == prj]
+            proj[prj] = get_activities(ee)
+        return proj
+
+    def get_activities(self):
+        all_activities = []
+        start = self.entries[0].date
+        last = get_epoch(start)
+        act = Activity(start)
+        prev = start
+        for entry in self.entries:
+            act.add_entry(entry)
+            break_time = get_epoch(entry.date) - get_epoch(prev)
+            if break_time > self.break_time:
+                act.set_end(prev)
+                all_activities.append(act)
+                act = Activity(entry.date)
+                start = entry.date
+            prev = entry.date
+
+        return all_activities
