@@ -4,6 +4,31 @@ import sys
 import datetime
 import rfc822
 import time
+YEAR=2013
+
+class Activity():
+    def __init__(self, start):
+        self.start = start
+        self.entries = []
+
+    def set_end(self, end):
+        self.end = end
+
+    def add_entry(self, date, host, pwd, cmd):
+        self.entries.append((date, host,pwd, cmd))
+
+    def length(self):
+        return (time.mktime(self.end.timetuple()) -
+                time.mktime(self.start.timetuple()))
+
+    def __repr__(self):
+        return "activity: %0.2fh %s -> %s" % (
+            self.length()/3600.,
+            self.start.strftime("%a %b %d %H:%M:%S"),
+            self.end.strftime("%a %b %d %H:%M:%S"))
+
+    def week(self):
+        return int(self.start.strftime("%V"))
 
 def get_datestr(l, hostname):
     split = l.split("host:")
@@ -38,6 +63,9 @@ def parse_report(f, verbose):
     first_time = True
     lines = [l for l in f.readlines()]
     summary = 0
+    entries = []
+    all_activities = []
+    act = None
     for (i, l) in enumerate(lines):
         try:
             (datestr, host, pwd, hist, cmd) = get_datestr(l, "nobu2")
@@ -52,6 +80,9 @@ def parse_report(f, verbose):
         week=int(date.strftime("%V"))
         epoc = time.mktime(date.timetuple())
         break_time = epoc - last
+        if act == None:
+            act = Activity(date)
+
         def get_day(date):
                 return int(date.strftime("%d"))
 
@@ -66,19 +97,22 @@ def parse_report(f, verbose):
             # Found a break... print the last batch
             end = last_date
             start = last_start_date
+            act.set_end(end)
+            all_activities.append(act)
+            act = Activity(date)
 
 #            if int(last_start_date.strftime("%V")) != int(end.strftime("%V")):
             if first_time or last_week_print.strftime("%V") != start.strftime("%V"):
-                print "sum: %0.2fh" % (summary/3600.)
-                print
-                print "WEEK %d" % week
-                print "=================="
+#                print "sum: %0.2fh" % (summary/3600.)
+#                print
+#                print "WEEK %d" % week
+#                print "=================="
                 last_week_print = start
                 summary = 0
 
 #            if int(last_start_date.strftime("%d")) != int(end.strftime("%d")):
             if first_time or get_day(last_day_print) != get_day(start):
-                print start.strftime("== %a %b %d")
+ #               print start.strftime("== %a %b %d")
                 first_time = False
                 last_day_print = start
 
@@ -86,24 +120,33 @@ def parse_report(f, verbose):
             length = (time.mktime(end.timetuple()) -
                       time.mktime(start.timetuple()))
             if (length != 0):
-                print " activity: %0.2fh %s -> %s (coming break %0.1fh)" % (
-                    length/3600.,
-                    last_start_date.strftime("%a %b %d %H:%M:%S"),
-                    last_date.strftime("%a %b %d %H:%M:%S"),
-                    break_time/3600.)
+#                print " activity: %0.2fh %s -> %s (coming break %0.1fh)" % (
+#                    length/3600.,
+#                    last_start_date.strftime("%a %b %d %H:%M:%S"),
+#                    last_date.strftime("%a %b %d %H:%M:%S"),
+#                    break_time/3600.)
                 summary += length
 
             last_start = epoc
             last_start_date = date
+            entries = []
+        act.add_entry(date, host, pwd, cmd)
         last = epoc
         last_date = date
 
         if verbose:
             print datestr, host, pwd, cmd.strip()
-    print "sum: %0.2fh" % (summary/3600.)
+#   print "sum: %0.2fh" % (summary/3600.)
+    return all_activities
 
+def show_week(all_activities, week):
+    for a in all_activities:
+        if a.week() == week:
+            print a, len(a.entries)
+            for (date, host, pwd, cmd) in a.entries:
+                print "  %s %s %s" % (date.strftime("%a %b %d %H:%M:%S"),
+                                      host, pwd)
 import argparse
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process ps log.')
@@ -121,4 +164,6 @@ if __name__ == "__main__":
     else:
         f=file(args.file[0], "r")
 
-    parse_report(f, args.verbose)
+    all = parse_report(f, args.verbose)
+    print "week 30"
+    show_week(all, 30)
