@@ -12,8 +12,8 @@ if [ -z ${REMOTE_NAME} ] ; then
     REMOTE_NAME=origin
 fi
 
-HOSTNAME=svetsen
-FQHN=${HOSTNAME}.homeip.net
+HOSTNAME=htpc
+FQHN=${HOSTNAME}.svetsen.net
 
 if [ $(hostname) != "htpc" ] ; then
     echo "ssh.."
