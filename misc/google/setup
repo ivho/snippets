@@ -1,1 +1,1 @@
-export PYTHONPATH=/home/ivho/install/gdata/lib/python
+export PYTHONPATH=$PWD/gdata-2.0.18/src
