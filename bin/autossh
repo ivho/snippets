@@ -12,6 +12,7 @@ if [ -f $PIDFILE ] ; then
 fi
 
 date >> $DIR/autossh.log
-AUTOSSH_PIDFILE=$PIDFILE autossh svetsen -R 8888:localhost:8888 -R 11022:localhost:22 -f -N >> $DIR/autossh.log
+AUTOSSH_PIDFILE=$PIDFILE autossh htpc.svetsen.net -R 8888:localhost:8888 -R 11022:localhost:22 -f -N >> $DIR/autossh.log
 echo "Done" >> $DIR/autossh.log
+
 
