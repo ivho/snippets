@@ -8,6 +8,7 @@ symlinks=[
     (".bashrc", "rc/dot.bashrc"),
     (".fetchmailrc", "rc/dot.fetchmailrc"),
     (".inputrc", "rc/dot.inputrc"),
+    (".tmux.conf", "rc/dot.tmux.conf"),
     ("bin", "bin")]
 
 
