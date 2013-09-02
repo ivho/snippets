@@ -10,3 +10,4 @@
     dc = diff --cached
     topstash = stash show -p stash@{0}
     unpushed = log --branches --not --remotes
+    stat = diff --cached --stat
