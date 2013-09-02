@@ -6,6 +6,8 @@
  )
 
 
+(add-to-list 'load-path "~/.emacs.d/")
+
 (custom-set-faces
   ;; custom-set-faces was added by Custom.
   ;; If you edit it by hand, you could mess it up, so be careful.
@@ -59,7 +61,9 @@
 (global-set-key [(meta return)] 'goto-line)
 
 ;;DML stuff
-(setq load-path (cons "~/.emacs.d/vt-elisp" load-path))
+;;(setq load-path (cons "~/.emacs.d/vt-elisp" load-path))
+(add-to-list 'load-path "~/.emacs.d/vt-elisp/")
+
 (load "vt-elisp-start")
 (add-hook 'dml-mode-hook
   (function (lambda ()
@@ -104,5 +108,7 @@
       (cons '("\\.include$" . simics-script-mode)
 	    auto-mode-alist))
 
+(autoload 'scad-mode "scad-mode" "Major mode for editing SCAD code." t)
+(add-to-list 'auto-mode-alist '("\\.scad$" . scad-mode))
 
 (put 'upcase-region 'disabled nil)
