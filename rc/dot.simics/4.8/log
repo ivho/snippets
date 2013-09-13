@@ -1,0 +1,1004 @@
+# '/home/ivho/.simics/4.8/log':
+# Simics 4.8 (4517)
+
+# The generation of this file can be prevented using the -no-log
+# invocation option.
+# This file will not be generated in future versions of Simics.
+# Running on nobu2 (Linux 3.5.0-30-generic x86_64)
+# command-line arguments: -workspace /space/ivho/totoro/workspace -batch-mode -no-win -echo /space/ivho/totoro/w# Add commands that should run when Simics starts to this f#
+# Add commands that should run when Simics starts to this file.
+#
+try {run-c@from refmanual import *
+@doc = DOC_gather_documentation(verbose = 1)
+@if doc:
+    DOC_print_component_info("refmanual.docu", doc,
+                             no_extern_link = 1)
+
+f not defined freq_mhz              {$freq_mhz           = 1666.6}
+if not defined ccb_mhz               {$ccb_mhz            = 666.6}
+if not defined pc
+$shelf = (create-shelf-totoro name = $shelf_name
+                              goal_latency = $goal_latency)
+instantiate-components
+run-python-file /space/ivho/totoro/workspace/targets/totoro/description.py
+@import refmanual
+@refmanual.variable_description.update(extra_variable_description)
+@refmanual.DOC_print_target_script_info("/space/ivho/totoro/workspace/targets/totoro/totoro-shelf.simics.docu", "totoro-shelf.simics")
+quit 0
+tory_ctrl_com  = "inventory_ctrl_com.bin"}
+if not defined u
+$shelf = (create-shelf-totoro name = $shelf_name
+                              goal_latency = $goal_latency)
+
+# Insert the control board in the shelf
+run-command-file "%script%/totoro-control.include"
+if not defined freq_mhz              {$freq_mhz           = 1666.6}
+if not defined ccb_mhz               {$ccb_mhz            = 666.6}
+if not defined pci_66                {$pci_66             = FALSE}
+if not defined control_host_name 
+if not (resolve-file -query $l1_cache_fixup) {
+   interrupt-script "Failed to find file " + $l1_cache_fixup
+}
+$l1_cache_fixup = (resolve-file $l1_cache_fixup)
+$mep = (create-board-totoro-1Gmep name = $mep_host_name
+                                        cpu_frequency = $freq_mhz
+                
+if not (resolve-file -query $l1_cache_fixup) {
+   interrupt-script "Failed to find file " + $l1_cache_fixup
+}
+$l1_cache_fixup = (resolve-file $l1_cache_fixup)
+$control = (create-board-totoro-control name = $control_host_name
+                                        cpu_frequency = $freq_mhz
+                                        ccb_frequency = $ccb_mhz
+                                        pci_speed_66  = $pci_66
+                                        inventory_main = $inventory_ctrl_main
+                                        inventory_com  = $inventory_ctrl_com
+                                        uboot_main = $uboot_main
+                                        uboot_main_offset = $uboot_main_offset
+                                        uboot_com = $uboot_com
+                                        uboot_com_offset = $uboot_com_offset
+                                        l1_cache_addr_main = $l1_cache_addr_main
+                                        l1_cache_addr_com = $l1_cache_addr_com
+                                        memory_megs_main = $memory_megs_main
+                                        memory_megs_com = $memory_megs_com
+                                        l1_cache_fixup = $l1_cache_fixup
+                                        )
+
+if $create_consoles {
+   if $telnet_console {
+         $consol
+# U-boot uses l1 cache without backing RAM for stack in cache.
+#
+# This is handled by inserting a temporary mapping on the
+# address which is allocated by u-boot and removing this mapping
+# when this region is invalidated (via dcbi).
+#
+# The address which u-boot uses as stack can either be auto-detected
+# or specified with the $l1_cache_addr (if $l1_cache_addr is undefined,
+# auto-detection will be used). The size is specified with the $l1_cache_size.
+
+if no
+# U-boot uses l1 cache without backing RAM for stack in cache.
+#
+# This is handled by inserting a temporary mapping on the
+# address which is allocated by u-boot and removing this mapping
+# when this region is invalidated (via dcbi).
+#
+# The address which u-boot uses as stack can either be auto-detected
+# or specified with the $l1_cache_addr (if $l1_cache_addr is undefined,
+# auto-detection will be used). The size is specified with the $l1_cache_size.
+
+if not defined l1_cache_max_tries { $l1_cache_max_tries = 100 }
+
+script-branch {
+  local $cpu = $uboot_cpu
+#  try {
+#      $cpu = $system.soc.cpu[0][0]
+#  } except {
+#      try {#
+#	$cpu = $system.main.cpu[0]
+#      } except {#
+#	$cpu = $system.main.cpu
+#      }
+#  }
+  local $phys_mem = $cpu->physical_memory
+  local $l1_cache = $l1
+
+  while (TRUE) {
+      local $l1_addr = 1           # Auto-detect
+      local $l1_size = 0x4000      # Default
+
+      if defined l1_cache_addr  { $l1_addr = $l1_cache_addr }
+      if defined l1_cache_size  { $l1_size = $l1_cache_size }
+
+      local $bp_id = ($phys_mem.break 0x0000_0000 0x10_0000_0000)
+      set-prefix $bp_id "dcbz "
+
+      local $loop_count = 0
+
+      while ($l1_addr == 1) {
+          # Auto-detect L1 cache base address
+          # This is done by looking for the first dcbz targeting an address
+          # without any backing storage.
+
+          if ($loop_count >= $l1_cache_max_tries) {
+              delete $bp_id
+              echo "Could not detect the start location of the locked L1 cache."
+              echo "You will likely see unmapped access errors later."
+              interrupt-script "[" + $uboot_name + "] locked L1 cache handling aborted."
+          }
+
+          wait-for-breakpoint $bp_id
+
+          local $inst = ($phys_mem.get -b ($cpu.logical-to-physical
+                                           ($cpu.read-reg pc)))
+          local $ra = ($inst >> 16) & 0b11111
+          local $rb = ($inst >> 11) & 0b11111
+
+          if ($ra) {
+              $dcbz_addr = ($cpu.read-reg "r" + $ra) + ($cpu.read-reg "r" + $rb)
+          } else {
+              $dcbz_addr = ($cpu.read-reg "r" + $rb)
+          }
+
+          local $sf = (($cpu.read-reg "msr") >> 31) & 1
+          if ($sf == 0) {
+              $dcbz_addr = $dcbz_addr & 0xffff_ffff
+          }
+
+          try {
+              $dcbz_addr = ($cpu.logical-to-physical $dcbz_addr)
+
+              # See if there's any backing storage
+              try {
+                  $phys_mem.get -b $dcbz_addr
+              } except {
+                  @SIM_log_info(1, SIM_get_object(simenv.uboot_cpu), 0, "locking cache starting at 0x%09x" % simenv.dcbz_addr)
+                  $l1_addr = $dcbz_addr
+              }
+          } except {}
+
+          $loop_count += 1
+      }
+
+      delete $bp_id
+
+      local $dcbi_addr = 0x1 # Invalid
+
+      # Map the L1 cache
+      ($phys_mem.add-map $l1_cache base = $l1_addr
+          length = $l1_size priority = 10 offset = $l1_addr)
+
+      local $bp_id = ($phys_mem.break 0x0000_0000 0x10_0000_0000)
+      set-prefix $bp_id "dcbi "
+
+      local $loop_count = 0
+      while ($dcbi_addr != $l1_addr) {
+
+          # Make sure we don't get stuck in an endless loop here, as that
+          # affects performance (a lot)
+          if ($loop_count >= $l1_cache_max_tries) {
+              delete $bp_id
+              echo "Could not detect L1 lock invalidation."
+              (echo "This may result in inconsistent data in the simulated " +
+                    "memory.")
+              interrupt-script "[" + $uboot_name + "] locked L1 cache handling aborted."
+          }
+
+          wait-for-breakpoint $bp_id
+          local $inst = ($phys_mem.get -b ($cpu.logical-to-physical
+                                        
+# U-boot uses l1 cache without backing RAM for stack in cache.
+#
+# This is handled by inserting a temporary mapping on the
+# address which is allocated by u-boot and removing this mapping
+# when this region is invalidated (via dcbi).
+#
+# The address which u-boot uses as stack can either be auto-detected
+# or specified with the $l1_cache_addr (if $l1_cache_addr is undefined,
+# auto-detection will be used). The size is specified with the $l1_cache_size.
+
+if not defined l1_cache_max_tries { $l1_cache_max_tries = 100 }
+
+script-branch {
+  local $cpu = $uboot_cpu
+#  try {
+#      $cpu = $system.soc.cpu[0][0]
+#  } except {
+#      try {#
+#	$cpu = $system.main.cpu[0]
+#      } except {#
+#	$cpu = $system.main.cpu
+#      }
+#  }
+  local $phys_mem = $cpu->physical_memory
+  local $l1_cache = $l1
+
+  while (TRUE) {
+      local $l1_addr = 1           # Auto-detect
+      local $l1_size = 0x4000      # Default
+
+      if defined l1_cache_addr  { $l1_addr = $l1_cache_addr }
+      if defined l1_cache_size  { $l1_size = $l1_cache_size }
+
+      local $bp_id = ($phys_mem.break 0x0000_0000 0x10_0000_0000)
+      set-prefix $bp_id "dcbz "
+
+      local $loop_count = 0
+
+      while ($l1_addr == 1) {
+          # Auto-detect L1 cache base address
+          # This is done by looking for the first dcbz targeting an address
+          # without any backing storage.
+
+          if ($loop_count >= $l1_cache_max_tries) {
+              delete $bp_id
+              echo "Could not detect the start location of the locked L1 cache."
+              echo "You will likely see unmapped access errors later."
+              interrupt-script "[" + $uboot_name + "] locked L1 cache handling aborted."
+          }
+
+          wait-for-breakpoint $bp_id
+
+          local $inst = ($phys_mem.get -b ($cpu.logical-to-physical
+                                           ($cpu.read-reg pc)))
+          local $ra = ($inst >> 16) & 0b11111
+          local $rb = ($inst >> 11) & 0b11111
+
+          if ($ra) {
+              $dcbz_addr = ($cpu.read-reg "r" + $ra) + ($cpu.read-reg "r" + $rb)
+          } else {
+              $dcbz_addr = ($cpu.read-reg "r" + $rb)
+          }
+
+          local $sf = (($cpu.read-reg "msr") >> 31) & 1
+          if ($sf == 0) {
+              $dcbz_addr = $dcbz_addr & 0xffff_ffff
+          }
+
+          try {
+              $dcbz_addr = ($cpu.logical-to-physical $dcbz_addr)
+
+              # See if there's any backing storage
+              try {
+                  $phys_mem.get -b $dcbz_addr
+              } except {
+                  @SIM_log_info(1, SIM_get_object(simenv.uboot_cpu), 0, "locking cache starting at 0x%09x" % simenv.dcbz_addr)
+                  $l1_addr = $dcbz_addr
+              }
+          } except {}
+
+          $loop_count += 1
+      }
+
+      delete $bp_id
+
+      local $dcbi_addr = 0x1 # Invalid
+
+      # Map the L1 cache
+      ($phys_mem.add-map $l1_cache base = $l1_addr
+          length = $l1_size priority = 10 offset = $l1_addr)
+
+      local $bp_id = ($phys_mem.break 0x0000_0000 0x10_0000_0000)
+      set-prefix $bp_id "dcbi "
+
+      local $loop_count = 0
+      while ($dcbi_addr != $l1_addr) {
+
+          # Make sure we don't get stuck in an endless loop here, as that
+          # affects performance (a lot)
+          if ($loop_count >= $l1_cache_max_tries) {
+              delete $bp_id
+              echo "Could not detect L1 lock invalidation."
+              (echo "This may result in inconsistent data in the simulated " +
+                    "memory.")
+              interrupt-script "[" + $uboot_name + "] locked L1 ca
+# U-boot uses l1 cache without backing RAM for stack in cache.
+#
+# This is handled by inserting a temporary mapping on the
+# address which is allocated by u-boot and removing this mapping
+# when this region is invalidated (via dcbi).
+#
+# The address which u-boot uses as stack can either be auto-detected
+# or specified with the $l1_cache_addr (if $l1_cache_addr is undefined,
+# auto-detection will be used). The size is specified with the $l1_cache_size.
+
+if not defined l1_cache_max_tries { $l1_cache_max_tries = 100 }
+
+script-branch {
+  local $cpu = $uboot_cpu
+#  try {
+#      $cpu = $system.soc.cpu[0][0]
+#  } except {
+#      try {#
+#	$cpu = $system.main.cpu[0]
+#      } except {#
+#	$cpu = $system.main.cpu
+#      }
+#  }
+  local $phys_mem = $cpu->physical_memory
+  local $l1_cache = $l1
+
+  while (TRUE) {
+      local $l1_addr = 1           # Auto-detect
+      local $l1_size = 0x4000      # Default
+
+      if defined l1_cache_addr  { $l1_addr = $l1_cache_addr }
+      if defined l1_cache_size  { $l1_size = $l1_cache_size }
+
+      local $bp_id = ($phys_mem.break 0x0000_0000 0x10_0000_0000)
+      set-prefix $bp_id "dcbz "
+
+      local $loop_count = 0
+
+      while ($l1_addr == 1) {
+          # Auto-detect L1 cache base address
+          # This is done by looking for the first dcbz targeting an address
+          # without any backing storage.
+
+          if ($loop_count >= $l1_cache_max_tries) {
+              delete $bp_id
+              echo "Could not detect the start location of the locked L1 cache."
+              echo "You will likely see unmapped access errors later."
+              interrupt-script "[" + $uboot_name + "] locked L1 cache handling aborted."
+          }
+
+          wait-for-breakpoint $bp_id
+
+          local $inst = ($phys_mem.get -b ($cpu.logical-to-physical
+                                           ($cpu.read-reg pc)))
+          local $ra = ($inst >> 16) & 0b11111
+          local $rb = ($inst >> 11) & 0b11111
+
+          if ($ra) {
+              $dcbz_addr = ($cpu.read-reg "r" + $ra) + ($cpu.read-reg "r" + $rb)
+          } else {
+              $dcbz_addr = ($cpu.read-reg "r" + $rb)
+          }
+
+          local $sf = (($cpu.read-reg "msr") >> 31) & 1
+          if ($sf == 0) {
+              $dcbz_addr = $dcbz_addr & 0xffff_ffff
+          }
+
+          try {
+              $dcbz_addr = ($cpu.logical-to-physical $dcbz_addr)
+
+              # See if there's any backing storage
+              try {
+                  $phys_mem.get -b $dcbz_addr
+              } except {
+                  @SIM_log_info(1, SIM_get_object(simenv.uboot_cpu), 0, "locking cache starting at 0x%09x" % simenv.dcbz_addr)
+                  $l1_addr = $dcbz_addr
+              }
+          } except {}
+
+          $loop_count += 1
+      }
+
+      delete $bp_id
+
+      local $dcbi_addr = 0x1 # Invalid
+
+      # Map the L1 cache
+      ($phys_mem.add-map $l1_cache base = $l1_addr
+          length = $l1_size priority = 10 offset = $l1_addr)
+
+      local $bp_id = ($phys_mem.break 0x0000_0000 0x10_0000_0000)
+      set-prefix $bp_id "dcbi "
+
+      local $loop_count = 0
+      while ($dcbi_addr != $l1_addr) {
+
+          # Make sure we don't get stuck in an endless loop here, as that
+          # affects performance (a lot)
+          if ($loop_count >= $l1_cache_max_tries) {
+              delete $bp_id
+              echo "Could not detect L1 lock invalidation."
+              (echo "This may result in inconsistent data in the simulated " +
+                    "memory.")
+              interrupt-script "[" + $uboot_name + "] locked L1 cache handling aborted."
+          }
+
+          wait-for-breakpoint $bp_id
+          local $inst = ($phys_mem.get -b ($cpu.logical-to-physical
+                                           ($cpu.read-reg pc)))
+          local $ra = ($inst >> 16) & 0b11111
+          local $rb = ($inst >> 11) & 0b11111
+
+          if ($ra) {
+              $dcbi_addr = ($cpu.read-reg "r" + $ra) + ($cpu.read-reg "r" + $rb)
+          } else {
+              $dcbi_addr = ($cpu.read-reg "r" + $rb)
+          }
+
+          local $sf = (($cpu.read-reg "msr") >> 31) & 1
+          if ($sf == 0) {
+              $dcbi_addr = $dcbi_addr & 0xffff_ffff
+          }
+
+          try {
+              $dcbi_addr = ($cpu.logical-to-physical $dcbi_addr)
+          } except {
+              $dcbi_addr = 1
+          }
+
+          $loop_count += 1
+      }
+
+      $phys_mem.del-map $l1_cache base = $l1_addr
+      delete $bp_id
+
+      # Restart loop if we reset this processor
+      $cpu.wait-for-processor-reset
+   }
+}
+
+# U-boot uses l1 cache without backing RAM for stack in cache.
+#
+# This is handled by inserting a temporary mapping on the
+# address which is allocated by u-boot and removing this mapping
+# when this region is invalidated (via dcbi).
+#
+# The address which u-boot uses as stack can either be auto-detected
+# or specified with the $l1_cache_addr (if $l1_cache_addr is undefined,
+# auto-detection will be used). The size is specified with the $l1_cache_size.
+
+if not defined l1_cache_max_tries { $l1_cache_max_tries = 100 }
+
+script-branch {
+  local $cpu = $uboot_cpu
+#  try {
+#      $cpu = $system.soc.cpu[0][0]
+#  } except {
+#      try {#
+#	$cpu = $system.main.cpu[0]
+#      } except {#
+#	$cpu = $system.main.cpu
+#      }
+#  }
+  local $phys_mem = $cpu->physical_memory
+  local $l1_cache = $l1
+
+  while (TRUE) {
+      local $l1_addr = 1           # Auto-detect
+      local $l1_size = 0x4000      # Default
+
+      if defined l1_cache_addr  { $l1_addr = $l1_cache_addr }
+      if defined l1_cache_size  { $l1_size = $l1_cache_size }
+
+      local $bp_id = ($phys_mem.break 0x0000_0000 0x10_0000_0000)
+      set-prefix $bp_id "dcbz "
+
+      local $loop_count = 0
+
+      while ($l1_addr == 1) {
+          # Auto-detect L1 cache base address
+          # This is done by looking for the first dcbz targeting an address
+          # without any backing storage.
+
+          if ($loop_count >= $l1_cache_max_tries) {
+              delete $bp_id
+              echo "Could not detect the start location of the locked L1 cache."
+              echo "You will likely see unmapped access errors later."
+              interrupt-script "[" + $uboot_name + "] locked L1 cache handling aborted."
+          }
+
+          wait-for-breakpoint $bp_id
+
+          local $inst = ($phys_mem.get -b ($cpu.logical-to-physical
+                                           ($cpu.read-reg pc)))
+          local $ra = ($inst >> 16) & 0b11111
+          local $rb = ($inst >> 11) & 0b11111
+
+          if ($ra) {
+              $dcbz_addr = ($cpu.read-reg "r" + $ra) + ($cpu.read-reg "r" + $rb)
+          } else {
+              $dcbz_addr = ($cpu.read-reg "r" + $rb)
+          }
+
+          local $sf = (($cpu.read-reg "msr") >> 31) & 1
+          if ($sf == 0) {
+              $dcbz_addr = $dcbz_addr & 0xffff_ffff
+          }
+
+          try {
+              $dcbz_addr = ($cpu.logical-to-physical $dcbz_addr)
+
+              # See if there's any backing storage
+              try {
+                  $phys_mem.get -b $dcbz_addr
+              } except {
+                  @SIM_log_info(1, SIM_get_object(simenv.uboot_cpu), 0, "locking cache starting at 0x%09x" % simenv.dcbz_addr)
+                  $l1_addr = $dcbz_addr
+              }
+          } except {}
+
+          $loop_count += 1
+      }
+
+      delete $bp_id
+
+      local $dcbi_addr = 0x1 # Invalid
+
+      # Map the L1 cache
+      ($phys_mem.add-map $l1_cache base = $l1_addr
+          length = $l1_size priority = 10 offset = $l1_addr)
+
+      local $bp_id = ($phys_mem.break 0x0000_0000 0x10_0000_0000)
+      set-prefix $bp_id "dcbi "
+
+      local $loop_count = 0
+      while ($dcbi_addr != $l1_addr) {
+
+          # Make sure we don't get stuck in an endless loop here, as that
+          # affects performance (a lot)
+          if ($loop_count >= $l1_cache_max_tries) {
+              delete $bp_id
+              echo "Could not detect L1 lock invalidation."
+              (echo "This may result in inconsistent data in the simulated " +
+                    "memory.")
+              interrupt-script "[" + $uboot_name + "] locked L1 cache handling aborted."
+          }
+
+          wait-for-breakpoint $bp_id
+          local $inst = ($phys_mem.get -b ($cpu.logical-to-physical
+                                           ($cpu.read-reg pc)))
+          local $ra = ($inst >> 16) & 0b11111
+          local $rb = ($inst >> 11) & 0b11111
+
+          if ($ra) {
+              $dcbi_addr = ($cpu.read-reg "r" + $ra) + ($cpu.read-reg "r" + $rb)
+          } else {
+              $dcbi_addr = ($cpu.read-reg "r" + $rb)
+          }
+
+          local $sf = (($cpu.read-reg "msr") >> 31) & 1
+          if ($sf == 0) {
+              $dcbi_addr = $dcbi_addr & 0xffff_ffff
+          }
+
+          try {
+              $dcbi_addr = ($cpu.logical-to-physical $dcbi_addr)
+          } except {
+              $dcbi_addr = 1
+          }
+
+          $loop_count += 1
+      }
+
+      $phys_mem.del-map $l1_cache base = $l1_addr
+      delete $bp_id
+
+      # Restart loop if we reset this processor
+      $cpu.wait-for-processor-reset
+   }
+}
+
+# U-boot uses l1 cache without backing RAM for stack in cache.
+#
+# This is handled by inserting a temporary mapping on the
+# address which is allocated by u-boot and removing this mapping
+# when this region is invalidated (via dcbi).
+#
+# The address which u-boot uses as stack can either be auto-detected
+# or specified with the $l1_cache_addr (if $l1_cache_addr is undefined,
+# auto-detection will be used). The size is specified with the $l1_cache_size.
+
+if not defined l1_cache_max_tries { $l1_cache_max_tries = 100 }
+
+script-branch {
+  local $cpu = $uboot_cpu
+#  try {
+#      $cpu = $system.soc.cpu[0][0]
+#  } except {
+#      try {#
+#	$cpu = $system.main.cpu[0]
+#      } except {#
+#	$cpu = $system.main.cpu
+#      }
+#  }
+  local $phys_mem = $cpu->physical_memory
+  local $l1_cache = $l1
+
+  while (TRUE) {
+      local $l1_addr = 1           # Auto-detect
+      local $l1_size = 0x4000      # Default
+
+      if defined l1_cache_addr  { $l1_addr = $l1_cache_addr }
+      if defined l1_cache_size  { $l1_size = $l1_cache_size }
+
+      local $bp_id = ($phys_mem.break 0x0000_0000 0x10_0000_0000)
+      set-prefix $bp_id "dcbz "
+
+      local $loop_count = 0
+
+      while ($l1_addr == 1) {
+          # Auto-detect L1 cache base address
+          # This is done by looking for the first dcbz targeting an address
+          # without any backing storage.
+
+          if ($loop_count >= $l1_cache_max_tries) {
+              delete $bp_id
+              echo "Could not detect the start location of the locked L1 cache."
+              echo "You will likely see unmapped access errors later."
+              interrupt-script "[" + $uboot_name + "] locked L1 cache handling aborted."
+          }
+
+          wait-for-breakpoint $bp_id
+
+          local $inst = ($phys_mem.get -b ($cpu.logical-to-physical
+                                           ($cpu.read-reg pc)))
+          local $ra = ($inst >> 16) & 0b11111
+          local $rb = ($inst >> 11) & 0b11111
+
+          if ($ra) {
+              $dcbz_addr = ($cpu.read-reg "r" + $ra) + ($cpu.read-reg "r" + $rb)
+          } else {
+              $dcbz_addr = ($cpu.read-reg "r" + $rb)
+          }
+
+          local $sf = (($cpu.read-reg "msr") >> 31) & 1
+          if ($sf == 0) {
+              $dcbz_addr = $dcbz_addr & 0xffff_ffff
+          }
+
+          try {
+              $dcbz_addr = ($cpu.logical-to-physical $dcbz_addr)
+
+              # See if there's any backing storage
+              try {
+                  $phys_mem.get -b $dcbz_addr
+              } except {
+                  @SIM_log_info(1, SIM_get_object(simenv.uboot_cpu), 0, "locking cache starting at 0x%09x" % simenv.dcbz_addr)
+                  $l1_addr = $dcbz_addr
+              }
+          } except {}
+
+          $loop_count += 1
+      }
+
+      delete $bp_id
+
+      local $dcbi_addr = 0x1 # Invalid
+
+      # Map the L1 cache
+      ($phys_mem.add-map $l1_cache base = $l1_addr
+          length = $l1_size priority = 10 offset = $l1_addr)
+
+      local $bp_id = ($phys_mem.break 0x0000_0000 0x10_0000_0000)
+      set-prefix $bp_id "dcbi "
+
+      local $loop_count = 0
+      while ($dcbi_addr != $l1_addr) {
+
+          # Make sure we don't get stuck in an endless loop here, as that
+          # affects performance (a lot)
+          if ($loop_count >= $l1_cache_max_tries) {
+              delete $bp_id
+              echo "Could not detect L1 lock invalidation."
+              (echo "This may result in inconsistent data in the simulated " +
+                    "memory.")
+              interrupt-script "[" + $uboot_name + "] locked L1 cache handling aborted."
+          }
+
+          wait-for-breakpoint $bp_id
+          local $inst = ($phys_mem.get -b ($cpu.logical-to-physical
+                                           ($cpu.read-reg pc)))
+          local $ra = ($inst >> 16) & 0b11111
+          local $rb = ($inst >> 11) & 0b11111
+
+          if ($ra) {
+              $dcbi_addr = ($cpu.read-reg "r" + $ra) + ($cpu.read-reg "r" + $rb)
+          } else {
+              $dcbi_addr = ($cpu.read-reg "r" + $rb)
+          }
+
+          local $sf = (($cpu.read-reg "msr") >> 31) & 1
+          if ($sf == 0) {
+              $dcbi_addr = $dcbi_addr & 0xffff_ffff
+          }
+
+          try {
+              $dcbi_addr = ($cpu.logical-to-physical $dcbi_addr)
+          } except {
+              $dcbi_addr = 1
+          }
+
+          $loop_count += 1
+      }
+
+      $phys_mem.del-map $l1_cache base = $l1_addr
+      delete $bp_id
+
+      # Restart loop if we reset this processor
+      $cpu.wait-for-processor-reset
+   }
+}
+
+# U-boot uses l1 cache without backing RAM for stack in cache.
+#
+# This is handled by inserting a temporary mapping on the
+# address which is allocated by u-boot and removing this mapping
+# when this region is invalidated (via dcbi).
+#
+# The address which u-boot uses as stack can either be auto-detected
+# or specified with the $l1_cache_addr (if $l1_cache_addr is undefined,
+# auto-detection will be used). The size is specified with the $l1_cache_size.
+
+if not defined l1_cache_max_tries { $l1_cache_max_tries = 100 }
+
+script-branch {
+  local $cpu = $uboot_cpu
+#  try {
+#      $cpu = $system.soc.cpu[0][0]
+#  } except {
+#      try {#
+#	$cpu = $system.main.cpu[0]
+#      } except {#
+#	$cpu = $system.main.cpu
+#      }
+#  }
+  local $phys_mem = $cpu->physical_memory
+  local $l1_cache = $l1
+
+  while (TRUE) {
+      local $l1_addr = 1           # Auto-detect
+      local $l1_size = 0x4000      # Default
+
+      if defined l1_cache_addr  { $l1_addr = $l1_cache_addr }
+      if defined l1_cache_size  { $l1_size = $l1_cache_size }
+
+      local $bp_id = ($phys_mem.break 0x0000_0000 0x10_0000_0000)
+      set-prefix $bp_id "dcbz "
+
+      local $loop_count = 0
+
+      while ($l1_addr == 1) {
+          # Auto-detect L1 cache base address
+          # This is done by looking for the first dcbz targeting an address
+          # without any backing storage.
+
+          if ($loop_count >= $l1_cache_max_tries) {
+              delete $bp_id
+              echo "Could not detect the start location of the locked L1 cache."
+              echo "You will likely see unmapped access errors later."
+              interrupt-script "[" + $uboot_name + "] locked L1 cache handling aborted."
+          }
+
+          wait-for-breakpoint $bp_id
+
+          local $inst = ($phys_mem.get -b ($cpu.logical-to-physical
+                                           ($cpu.read-reg pc)))
+          local $ra = ($inst >> 16) & 0b11111
+          local $rb = ($inst >> 11) & 0b11111
+
+          if ($ra) {
+              $dcbz_addr = ($cpu.read-reg "r" + $ra) + ($cpu.read-reg "r" + $rb)
+          } else {
+              $dcbz_addr = ($cpu.read-reg "r" + $rb)
+          }
+
+          local $sf = (($cpu.read-reg "msr") >> 31) & 1
+          if ($sf == 0) {
+              $dcbz_addr = $dcbz_addr & 0xffff_ffff
+          }
+
+          try {
+              $dcbz_addr = ($cpu.logical-to-physical $dcbz_addr)
+
+              # See if there's any backing storage
+              try {
+                  $phys_mem.get -b $dcbz_addr
+              } except {
+                  @SIM_log_info(1, SIM_get_object(simenv.uboot_cpu), 0, "locking cache starting at 0x%09x" % simenv.dcbz_addr)
+                  $l1_addr = $dcbz_addr
+              }
+          } except {}
+
+          $loop_count += 1
+      }
+
+      delete $bp_id
+
+      local $dcbi_addr = 0x1 # Invalid
+
+      # Map the L1 cache
+      ($phys_mem.add-map $l1_cache base = $l1_addr
+          length = $l1_size priority = 10 offset = $l1_addr)
+
+      local $bp_id = ($phys_mem.break 0x0000_0000 0x10_0000_0000)
+      set-prefix $bp_id "dcbi "
+
+      local $loop_count = 0
+      while ($dcbi_addr != $l1_addr) {
+
+          # Make sure we don't get stuck in an endless loop here, as that
+          # affects performance (a lot)
+          if ($loop_count >= $l1_cache_max_tries) {
+              delete $bp_id
+              echo "Could not detect L1 lock invalidation."
+              (echo "This may result in inconsistent data in the simulated " +
+                    "memory.")
+              interrupt-script "[" + $uboot_name + "] locked L1 cache handling aborted."
+          }
+
+          wait-for-breakpoint $bp_id
+          local $inst = ($phys_mem.get -b ($cpu.logical-to-physical
+                                           ($cpu.read-reg pc)))
+          local $ra = ($inst >> 16) & 0b11111
+          local $rb = ($inst >> 11) & 0b11111
+
+          if ($ra) {
+              $dcbi_addr = ($cpu.read-reg "r" + $ra) + ($cpu.read-reg "r" + $rb)
+          } else {
+              $dcbi_addr = ($cpu.read-reg "r" + $rb)
+          }
+
+          local $sf = (($cpu.read-reg "msr") >> 31) & 1
+          if ($sf == 0) {
+              $dcbi_addr = $dcbi_addr & 0xffff_ffff
+          }
+
+          try {
+              $dcbi_addr = ($cpu.logical-to-physical $dcbi_addr)
+          } except {
+              $dcbi_addr = 1
+          }
+
+          $loop_count += 1
+      }
+
+      $phys_mem.del-map $l1_cache base = $l1_addr
+      delete $bp_id
+
+      # Restart loop if we reset this processor
+      $cpu.wait-for-processor-reset
+   }
+}
+
+# U-boot uses l1 cache without backing RAM for stack in cache.
+#
+# This is handled by inserting a temporary mapping on the
+# address which is allocated by u-boot and removing this mapping
+# when this region is invalidated (via dcbi).
+#
+# The address which u-boot uses as stack can either be auto-detected
+# or specified with the $l1_cache_addr (if $l1_cache_addr is undefined,
+# auto-detection will be used). The size is specified with the $l1_cache_size.
+
+if not defined l1_cache_max_tries { $l1_cache_max_tries = 100 }
+
+script-branch {
+  local $cpu = $uboot_cpu
+#  try {
+#      $cpu = $system.soc.cpu[0][0]
+#  } except {
+#      try {#
+#	$cpu = $system.main.cpu[0]
+#      } except {#
+#	$cpu = $system.main.cpu
+#      }
+#  }
+  local $phys_mem = $cpu->physical_memory
+  local $l1_cache = $l1
+
+  while (TRUE) {
+      local $l1_addr = 1           # Auto-detect
+      local $l1_size = 0x4000      # Default
+
+      if defined l1_cache_addr  { $l1_addr = $l1_cache_addr }
+      if defined l1_cache_size  { $l1_size = $l1_cache_size }
+
+      local $bp_id = ($phys_mem.break 0x0000_0000 0x10_0000_0000)
+      set-prefix $bp_id "dcbz "
+
+      local $loop_count = 0
+
+      while ($l1_addr == 1) {
+          # Auto-detect L1 cache base address
+          # This is done by looking for the first dcbz targeting an address
+          # without any backing storage.
+
+          if ($loop_count >= $l1_cache_max_tries) {
+              delete $bp_id
+              echo "Could not detect the start location of the locked L1 cache."
+              echo "You will likely see unmapped access errors later."
+              interrupt-script "[" + $uboot_name + "] locked L1 cache handling aborted."
+          }
+
+          wait-for-breakpoint $bp_id
+
+          local $inst = ($phys_mem.get -b ($cpu.logical-to-physical
+                                           ($cpu.read-reg pc)))
+          local $ra = ($inst >> 16) & 0b11111
+          local $rb = ($inst >> 11) & 0b11111
+
+          if ($ra) {
+              $dcbz_addr = ($cpu.read-reg "r" + $ra) + ($cpu.read-reg "r" + $rb)
+          } else {
+              $dcbz_addr = ($cpu.read-reg "r" + $rb)
+          }
+
+          local $sf = (($cpu.read-reg "msr") >> 31) & 1
+          if ($sf == 0) {
+              $dcbz_addr = $dcbz_addr & 0xffff_ffff
+          }
+
+          try {
+              $dcbz_addr = ($cpu.logical-to-physical $dcbz_addr)
+
+              # See if there's any backing storage
+              try {
+                  $phys_mem.get -b $dcbz_addr
+              } except {
+                  @SIM_log_info(1, SIM_get_object(simenv.uboot_cpu), 0, "locking cache starting at 0x%09x" % simenv.dcbz_addr)
+                  $l1_addr = $dcbz_addr
+              }
+          } except {}
+
+          $loop_count += 1
+      }
+
+      delete $bp_id
+
+      local $dcbi_addr = 0x1 # Invalid
+
+      # Map the L1 cache
+      ($phys_mem.add-map $l1_cache base = $l1_addr
+          length = $l1_size priority = 10 offset = $l1_addr)
+
+      local $bp_id = ($phys_mem.break 0x0000_0000 0x10_0000_0000)
+      set-prefix $bp_id "dcbi "
+
+      local $loop_count = 0
+      while ($dcbi_addr != $l1_addr) {
+
+          # Make sure we don't get stuck in an endless loop here, as that
+          # affects performance (a lot)
+          if ($loop_count >= $l1_cache_max_tries) {
+              delete $bp_id
+              echo "Could not detect L1 lock invalidation."
+              (echo "This may result in inconsistent data in the simulated " +
+                    "memory.")
+              interrupt-script "[" + $uboot_name + "] locked L1 cache handling aborted."
+          }
+
+          wait-for-breakpoint $bp_id
+          local $inst = ($phys_mem.get -b ($cpu.logical-to-physical
+                                           ($cpu.read-reg pc)))
+          local $ra = ($inst >> 16) & 0b11111
+          local $rb = ($inst >> 11) & 0b11111
+
+          if ($ra) {
+              $dcbi_addr = ($cpu.read-reg "r" + $ra) + ($cpu.read-reg "r" + $rb)
+          } else {
+              $dcbi_addr = ($cpu.read-reg "r" + $rb)
+          }
+
+          local $sf = (($cpu.read-reg "msr") >> 31) & 1
+          if ($sf == 0) {
+              $dcbi_addr = $dcbi_addr & 0xffff_ffff
+          }
+
+          try {
+              $dcbi_addr = ($cpu.logical-to-physical $dcbi_addr)
+          } except {
+              $dcbi_addr = 1
+          }
+
+          $loop_count += 1
+      }
+
+      $phys_mem.del-map $l1_cache base = $l1_addr
+      delete $bp_id
+
+      # Restart loop if we reset this processor
+      $cpu.wait-for-processor-reset
+   }
+}
+run-python-file /space/ivho/totoro/workspace/targets/totoro/description.py
+@import refmanual
+@refmanual.variable_description.update(extra_variable_description)
+@refmanual.DOC_print_target_script_info("/space/ivho/totoro/workspace/targets/totoro/totoro-dual-control.simics.docu", "totoro-dual-control.simics")
+quit 0

@@ -1,0 +1,132 @@
+@import copy
+@import os
+@os.system("cp ..
+     @def copyfile(a,b): file(b,"wb").write(file(a,"rb").read())
+@copyfile("targets/ppc476fp-simple/images/"+simenv.rte_tar,"targets/ppc476fp-simple/images/rte_tar.tgz")
+lookup-file "kalle"
+$apa = "kaka"
+echo ($apa)
+board.soc.nca.status 
+board.soc.nca.pgit-status 
+c
+board.soc.nca.pgit-status
+write-configuration kalle
+board.soc.nca.pgit-status
+help loadbalance_vp
+loadbalance_vp.mac
+load-module lsi_trafgen 
+create-lsi-trafgen 
+create-lsi-trafgen name = trafgen
+load-module eth-links 
+create-ethernet-cable name = cable
+connect cnt0 = cable.device0 cnt1 = trafgen.phy 
+connect cnt1 = cable.device1 cnt0 = board.soc.GMAC1
+c
+write-configuration kalle2
+trafgen.mac->gen_frames
+help trafgen
+trafgen.status 
+trafgen.info 
+instantiate-components 
+trafgen.mac->gen_frames 10
+trafgen.mac->gen_frames = 10
+c
+trafgen.log-level 4
+trafgen.mac.log-level 4
+c
+read-configuration kalle2
+write-configuration booted
+board.soc.nca.pgit-status
+trafgen.mac->gen_frames = 10
+log-level 3
+c
+write-configuration booted
+board.soc.nca.pgit-status
+trafgen.mac->gen_frames = 10
+trafgen.log-level 4
+loadbalance_vp.log-level 4
+board.soc.nca.log-level 4
+c
+board.soc.nca.pgit-status
+c
+board.soc.nca.pgit-status
+c
+board.soc.nca.log-level 4
+trafgen.mac->gen_frames = 10
+c
+board.soc.nca.log-level 3
+trafgen.mac->gen_frames = 10
+trafgen.mac->gen_frames = 1
+loadbalance_vp.log-level 4
+trafgen.log-level 4
+c
+trafgen.log-level 4
+board.soc.nca.log-level 3
+loadbalance_vp.log-level 4
+board.soc.nca.log-level 3
+trafgen.log-level 4
+write-configuration booted2
+trafgen.mac->gen_frames = 1
+c
+trafgen.mac->gen_frames = 1
+trafgen.log-level 4
+trafgen.mac->gen_frames = 1
+trafgen.log-level 4 ; board.soc.nca.log-level 3 ; loadbalance_vp.log-level 4
+board.soc.nca.pgit-status
+trafgen.mac->gen_frames = 1
+c
+board.soc.nca.pgit-status
+trafgen.mac->gen_frames = 1
+board.soc.nca.pgit-status
+board.soc.nca->reg_NCP_NCA_PCQ_GRP_REG0 
+output-radix 
+output-radix  16
+board.soc.nca->reg_NCP_NCA_PCQ_GRP_REG0 
+trafgen.log-level 4 ; board.soc.nca.log-level 3 ; loadbalance_vp.log-level 4
+trafgen.mac->gen_frames = 1
+c
+board.soc.nca.pgit-status
+x p:0x1ffffe0000
+x p:0x1ffffe0080
+trafgen.mac->gen_frames = 1
+c
+board.soc.nca.pgit-status
+trafgen.mac->gen_frames = 1
+c
+board.soc.nca.pgit-status
+trafgen.mac->gen_frames = 1
+c
+trafgen.mac->gen_frames = 1
+board.soc.nca.pgit-status
+trafgen.mac->gen_frames = 1
+c
+board.soc.nca.pgit-status
+trafgen.log-level 4 ; board.soc.nca.log-level 3 ; loadbalance_vp.log-level 4
+trafgen.mac->gen_frames = 1
+c
+board.soc.nca.pgit-status
+trafgen.mac->gen_frames = 1
+c
+board.soc.nca.pgit-status
+write-configuration booted
+board.soc.nca.pgit-status
+trafgen.log-level 4 ; board.soc.nca.log-level 3 ; loadbalance_vp.log-level 4
+trafgen.mac->gen_frames = 1
+c
+board.soc.nca.pgit-status
+x p:0x1ffffe0180
+x p:0x1ffffe0100
+x p:0x1ffffe0000
+trafgen.mac->gen_frames = 1
+c
+board.soc.nca.pgit-status
+c
+trafgen.mac->gen_frames = 1
+board.soc.nca.pgit-status
+trafgen.mac->gen_frames = 1
+board.soc.nca.pgit-status
+trafgen.mac->gen_frames = 100
+c
+board.soc.nca.pgit-status
+c
+board.soc.nca.pgit-status

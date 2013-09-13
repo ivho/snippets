@@ -9,7 +9,10 @@ symlinks=[
     (".fetchmailrc", "rc/dot.fetchmailrc"),
     (".inputrc", "rc/dot.inputrc"),
     (".tmux.conf", "rc/dot.tmux.conf"),
-    ("bin", "bin")]
+    ("bin", "bin"),
+    (".simics", "rc/dot.simics"),
+    (".simics-installer", "rc/dot.simics-installer"),
+    ]
 
 
 if __name__ == "__main__":

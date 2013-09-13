@@ -1,0 +1,39 @@
+OBJECT prefs TYPE preferences {
+	object_id: "prefs"
+	build_id: 0x1012
+	cpu_mode: "normal"
+	gui_mode: "mixed"
+	startup_simics_path: ()
+	swap_dir: "/var/tmp"
+	license_file: "/space/ivho/SIMICS48.lic"
+	gui_default_workspace: NIL
+	output_radix: 10
+	output_grouping: (0, 0, 0, 0)
+	command_log: TRUE
+	license_check_date: "2013-08-14"
+	enable_rev_exec: FALSE
+	enable_multithreading: TRUE
+	history_lines: 0x2710
+	compress_images: TRUE
+	async_command_line: TRUE
+	network_iface_helper: "/space/ivho/install46/simics-4.6.84/linux64/bin/openif"
+	gui_cmd_line_font: NIL
+	readline_shortcuts: TRUE
+	gui_source_code_encoding: NIL
+	gui_open_cmdline_win: FALSE
+	gui_open_control_win: TRUE
+	autostart_sim: FALSE
+	console_in_gui: FALSE
+	progress_cnt: "virtual-time"
+	legacy_conf: FALSE
+	legacy_name: FALSE
+	legacy_object_id: TRUE
+	legacy_global_id: FALSE
+	legacy_cell: FALSE
+	module_preferences: {"real_network" : 
+	                     {"network_iface_helper" : 
+	                      "/space/ivho/install46/simics-4.6.84/linux64/bin/openif"}}
+	default_log_endianness: "little"
+	wireshark_path: NIL
+}
+

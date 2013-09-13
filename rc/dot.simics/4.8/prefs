@@ -1,0 +1,37 @@
+OBJECT prefs TYPE preferences {
+	object_id: "obj_00000001e1614a11"
+	build_id: 0x11a5
+	cpu_mode: "normal"
+	gui_mode: "mixed"
+	startup_simics_path: ()
+	swap_dir: "/var/tmp"
+	license_file: "/space/ivho/SIMICS48.lic"
+	gui_default_workspace: "/home/ivho/simics-workspace"
+	output_radix: 10
+	output_grouping: (0, 0, 0, 0)
+	command_log: TRUE
+	license_check_date: "2013-09-11"
+	enable_rev_exec: FALSE
+	enable_multithreading: TRUE
+	history_lines: 0x2710
+	compress_images: TRUE
+	async_command_line: TRUE
+	network_iface_helper: NIL
+	gui_cmd_line_font: NIL
+	readline_shortcuts: TRUE
+	gui_source_code_encoding: NIL
+	gui_open_cmdline_win: FALSE
+	gui_open_control_win: TRUE
+	gui_show_deprecated: FALSE
+	autostart_sim: FALSE
+	console_in_gui: FALSE
+	sla_accepted: "SLA-1.6"
+	progress_cnt: "virtual-time"
+	legacy_object_id: FALSE
+	legacy_global_id: FALSE
+	legacy_cell: FALSE
+	module_preferences: {"real_network" :  {"network_iface_helper" :  NIL}}
+	default_log_endianness: "little"
+	wireshark_path: NIL
+}
+
