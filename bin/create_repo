@@ -17,7 +17,7 @@ FQHN=${HOSTNAME}.svetsen.net
 
 if [ $(hostname) != "htpc" ] ; then
     echo "ssh.."
-    ssh ivho@${FQHN} /home/ivho/bin/create_repo ${REPO_NAME}
+    ssh ivho@${FQHN} /home/ivho/bin/create_repo ${REPO_NAME} ${REMOTE_NAME}
     echo "done."
     exit 0
 fi
