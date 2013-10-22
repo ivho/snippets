@@ -1,0 +1,11 @@
+#!/bin/bash
+set -o errexit
+set -o nounset
+
+TMPDIR=/tmp/repotest/
+rm -rf $TMPDIR
+mkdir -p $TMPDIR
+
+./svn_setup $TMPDIR/repo
+./create_test_repo $TMPDIR repo
+./gitsvn  $TMPDIR repo

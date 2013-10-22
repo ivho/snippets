@@ -1,0 +1,10 @@
+#!/bin/bash
+TMPDIR=$1
+REPO=$2
+GITCO=test.git
+rm -rf $TMPDIR/$GITCO
+mkdir $TMPDIR/
+cd $TMPDIR
+git svn clone file:///$TMPDIR/$REPO $GITCO -T trunk -b branches -t tags
+cd $GITCO
+git log --format=oneline
