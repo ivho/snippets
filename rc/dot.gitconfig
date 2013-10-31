@@ -11,3 +11,6 @@
     ds = diff --cached --stat
     topstash = stash show -p stash@{0}
     unpushed = log --branches --not --remotes
+
+[core]
+	excludesfile = ~/.gitignore
