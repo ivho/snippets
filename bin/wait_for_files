@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -o errexit
+#set -o nounset
+
+
+for f in $* ; do
+    echo -n "Waiting for " $f
+    while [ ! -f $f ] ; do
+	sleep 0.3
+	echo -n .
+    done
+    echo "  ok"
+done
