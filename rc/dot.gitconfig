@@ -13,4 +13,6 @@
     unpushed = log --branches --not --remotes
 
 [core]
-	excludesfile = ~/.gitignore
+    excludesfile = ~/.gitignore
+    uncomitted = diff --cached --stat
+
