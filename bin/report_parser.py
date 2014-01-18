@@ -9,7 +9,15 @@ YEAR=2013
 project_dirs = [("Totoro", ["/space/work/simics/totoro",
                             "/space/ivho/totoro"]),
                 ("SVN", ["/space/work/simics/svn",
-                         "/space/ivho/svn"])]
+                         "/space/ivho/svn"]),
+                ("Simics", ["/space/work/simics/Simics",
+                         "/space/ivho/Simics"]),
+                ("QSP", ["/space/work/simics/qsp",
+                         "/space/ivho/qsp"]),
+                ("NCA", ["/space/work/simics/nca",
+                         "/space/ivho/nca"]),
+                ("Toshiba", ["/space/work/simics/toshiba",
+                         "/space/ivho/toshiba"])]
 def pwd_to_proj(pwd):
     for (p, l) in project_dirs:
         for d in l:

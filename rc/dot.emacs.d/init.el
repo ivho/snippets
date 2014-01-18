@@ -14,8 +14,17 @@
   ;; Your init file should contain only one such instance.
   ;; If there is more than one, they won't work right.
  '(default ((t (:inherit nil :stipple nil :background "white" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 83 :width normal :foundry "unknown" :family "DejaVu Sans Mono"))))
- '(font-lock-string-face ((((class color) (min-colors 1) (background light)) (:foreground "green")))))
+ '(compilation-info ((((class color)) (:foreground "blue" :weight bold))))
+ )
 ;;(load-file "quilt.el")
+
+
+
+;;- Comments are displayed in `font-lock-comment-face'
+;; - Strings are displayed in `font-lock-string-face';
+;; - Certain other expressions are displayed in other faces according to the
+;;   value of the variable `font-lock-keywords'.
+
 
 (defun linux-c-mode ()
   "C mode with adjusted defaults for use with the Linux kernel."
