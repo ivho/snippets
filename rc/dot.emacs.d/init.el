@@ -67,7 +67,13 @@
 (tool-bar-mode 0)
 
 
+(load-file "/usr/share/emacs/site-lisp/xcscope.el")
+(require 'xcscope)
+(global-set-key (kbd "<f2>") 'cscope-find-this-symbol)
+
+
 (global-set-key [(meta return)] 'goto-line)
+
 
 ;;DML stuff
 ;;(setq load-path (cons "~/.emacs.d/vt-elisp" load-path))
