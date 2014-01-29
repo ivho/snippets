@@ -4,6 +4,7 @@ import os
 
 symlinks=[
     (".emacs.d", "rc/dot.emacs.d"),
+    (".gdbinit", "rc/dot.gdbinit"),
     (".gitconfig", "rc/dot.gitconfig"),
     (".bashrc", "rc/dot.bashrc"),
     (".fetchmailrc", "rc/dot.fetchmailrc"),
