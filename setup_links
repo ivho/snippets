@@ -6,6 +6,7 @@ symlinks=[
     (".emacs.d", "rc/dot.emacs.d"),
     (".gdbinit", "rc/dot.gdbinit"),
     (".gitconfig", "rc/dot.gitconfig"),
+    (".gitignore", "rc/dot.gitignore"),
     (".bashrc", "rc/dot.bashrc"),
     (".fetchmailrc", "rc/dot.fetchmailrc"),
     (".inputrc", "rc/dot.inputrc"),
