@@ -50,7 +50,7 @@
   (setq font-lock-preprocessor-face 'font-lock-preprocessor-face))
 
 (defvar simgen-mode-font-lock-keywords
-  '(("\\<\\(pattern\\|syntax\\|semantics\\|name\\|attrs\\|attributes\\|header\\|usercode\\|interpreter\\|imfields\\|intermediate form\\|in\\|not\\|reg\\|local\\|end\\)\\>"
+  '(("\\<\\(opcode\\|pattern\\|syntax\\|semantics\\|name\\|attrs\\|attributes\\|header\\|usercode\\|interpreter\\|imfields\\|intermediate form\\|in\\|not\\|reg\\|local\\|end\\)\\>"
      (1 font-lock-keyword-face))
     ("\\<\\(fields\\)"
      (1 font-lock-keyword-face))
@@ -104,7 +104,7 @@
   (set-syntax-table simgen-mode-syntax-table)
   (run-hooks 'simgen-mode-hook))
 
-(defvar simgen-offset 8
+(defvar simgen-offset 4
   "*Indentation offset used in SimGen mode")
 
 (defun simgen-indent-line ()
@@ -150,7 +150,7 @@
             ((looking-at "\\(pattern\\|syntax\\|semantics\\|attr\\(ibute\\)?s\\|name\\)\\>")
              (indent-line-to
               (save-excursion
-                (if (re-search-backward "\\<\\(fields\\|pattern\\)" nil t)
+                (if (re-search-backward "\\<\\(fields\\|opcode\\)" nil t)
                     (current-indentation)
                   0))))
 
@@ -173,7 +173,7 @@
             ;; After keyword
             ((save-excursion
                (beginning-of-line 0)
-               (if (looking-at "\\s-*\\(fields\\|imfields\\|intermediate form\\|instruction\\|virtual\\|pattern\\|syntax\\|semantics\\|attr\\(ibute\\)?s\\|header\\|usercode\\|interpreter\\|define\\|case\\)\\>")
+               (if (looking-at "\\s-*\\(opcode\\|fields\\|imfields\\|intermediate form\\|instruction\\|virtual\\|pattern\\|syntax\\|semantics\\|attr\\(ibute\\)?s\\|header\\|usercode\\|interpreter\\|define\\|case\\)\\>")
                    (setq col (+ (current-indentation) simgen-offset))))
              (indent-line-to col))
             (t

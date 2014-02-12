@@ -46,11 +46,20 @@
   (setq indent-tabs-mode t)
   (setq c-basic-offset 4))
 
-(defun simics-c-mode ()
+(defun simgen-c-mode ()
   "C mode with adjusted defaults for use with simcis."
   (interactive)
   (c-mode)
   (c-set-style "K&R")
+  (setq tab-width 8)
+  (setq show-trailing-whitespace t)
+  (setq indent-tabs-mode nil)
+  (setq c-basic-offset 8))
+
+(defun wr-simgen-mode ()
+  "C mode with adjusted defaults for use with simcis."
+  (interactive)
+  (simgen-mode)
   (setq tab-width 4)
   (setq show-trailing-whitespace t)
   (setq indent-tabs-mode nil)
@@ -117,6 +126,10 @@
 
 (setq auto-mode-alist
       (cons '("\\.simics$" . simics-script-mode)
+	    auto-mode-alist))
+
+(setq auto-mode-alist
+      (cons '("\\.sg$" . wr-simgen-mode)
 	    auto-mode-alist))
 
 (setq auto-mode-alist
