@@ -46,6 +46,15 @@
   (setq indent-tabs-mode t)
   (setq c-basic-offset 4))
 
+(defun simics-c-mode ()
+  "C mode with adjusted defaults for use with simcis."
+  (interactive)
+  (c-mode)
+  (c-set-style "K&R")
+  (setq show-trailing-whitespace t)
+  (setq indent-tabs-mode nil)
+  (setq c-basic-offset 8))
+
 (defun simgen-c-mode ()
   "C mode with adjusted defaults for use with simcis."
   (interactive)
@@ -107,6 +116,10 @@
 
 (setq auto-mode-alist
       (cons '("linux.*\\.c$" . linux-c-mode)
+	    auto-mode-alist))
+
+(setq auto-mode-alist
+      (cons '("cpu-common/.*\\.c$" . linux-c-mode)
 	    auto-mode-alist))
 
 (setq show-trailing-whitespace t)
