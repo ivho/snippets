@@ -5,6 +5,7 @@ import os
 symlinks=[
     (".emacs.d", "rc/dot.emacs.d"),
     (".gdbinit", "rc/dot.gdbinit"),
+    (".i3", "rc/dot.i3"),
     (".gitconfig", "rc/dot.gitconfig"),
     (".gitignore", "rc/dot.gitignore"),
     (".bashrc", "rc/dot.bashrc"),
