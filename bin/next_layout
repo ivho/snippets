@@ -1,0 +1,9 @@
+#!/bin/sh
+if setxkbmap -print | grep -q -e 'xkb_symbols.*pc+us' ; 
+then
+    echo "->se"
+    setxkbmap se
+else
+    echo "->us"
+    setxkbmap us
+fi
