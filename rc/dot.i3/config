@@ -23,8 +23,10 @@ font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
 # Use Mouse+$mod to drag floating windows to their wanted position
 floating_modifier $mod
 
+exec nm-applet
+
 # start a terminal
-bindsym $mod+Return exec i3-sensible-terminal
+bindsym $mod+Return exec "gnome-terminal --hide-menubar"
 
 # kill focused window
 bindsym $mod+Shift+q kill
@@ -118,6 +120,10 @@ bindsym $mod+Shift+r restart
 # exit i3 (logs you out of your X session)
 bindsym $mod+Shift+e exec "i3-nagbar -t warning -m 'You pressed the exit shortcut. Do you really want to exit i3? This will end your X session.' -b 'Yes, exit i3' 'i3-msg exit'"
 bindsym $mod+k exec "next_layout"
+bindsym $mod+Control+Right workspace next
+bindsym $mod+Control+Left workspace prev
+bindsym $mod+Control+Down workspace 1
+bindsym $mod+Control+Up workspace 2
 
 # resize window (you can also use the mouse for that)
 mode "resize" {
