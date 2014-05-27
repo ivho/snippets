@@ -24,6 +24,7 @@ font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
 floating_modifier $mod
 
 exec nm-applet
+exec gnome-sound-applet
 
 # start a terminal
 bindsym $mod+Return exec "gnome-terminal --hide-menubar"
@@ -45,10 +46,10 @@ bindsym $mod+d exec dmenu_run
 #bindsym $mod+semicolon focus right
 
 # alternatively, you can use the cursor keys:
-bindsym $mod+Left focus left
+bindsym $mod+Shift+Left focus left
 bindsym $mod+Down focus down
 bindsym $mod+Up focus up
-bindsym $mod+Right focus right
+bindsym $mod+Shift+Right focus right
 
 # move focused window
 bindsym $mod+Shift+j move left
@@ -57,10 +58,10 @@ bindsym $mod+Shift+l move up
 bindsym $mod+Shift+semicolon move right
 
 # alternatively, you can use the cursor keys:
-bindsym $mod+Shift+Left move left
+#bindsym $mod+Shift+Left move left
 bindsym $mod+Shift+Down move down
 bindsym $mod+Shift+Up move up
-bindsym $mod+Shift+Right move right
+#bindsym $mod+Shift+Right move right
 
 # split in horizontal orientation
 bindsym $mod+h split h
@@ -156,3 +157,8 @@ bindsym $mod+r mode "resize"
 bar {
         status_command i3status
 }
+
+#bindsym Super_L+1 move workspace to output HDMI1
+bindsym $mod+p move workspace to output eDP1
+bindsym $mod+o move workspace to output HDMI1
+
