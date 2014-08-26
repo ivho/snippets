@@ -1,0 +1,23 @@
+
+_images()
+{
+    local cur prev words cword
+    _init_completion || return
+    case $prev in
+	--debug|--verbose|--setup|--fsck-repo|--dont-symlink|--force-svn|--convert-svn-paths|--debug-perf)
+            return
+            ;;
+	--repo|--add|--add-enc|--remove|--replace|--src|--update|--add|--replace|--add-enc)
+            _filedir
+            return
+	    ;;
+    esac
+
+    if [[ $cur == -* ]]; then
+        COMPREPLY=( $( compgen -W '$( _parse_help "$1" )' -- "$cur" ) )
+        return
+    fi
+
+    _filedir
+} &&
+complete -F _images images.py
