@@ -16,8 +16,13 @@ project_dirs = [("Totoro", ["/space/work/simics/totoro",
                          "/space/ivho/qsp"]),
                 ("NCA", ["/space/work/simics/nca",
                          "/space/ivho/nca"]),
+                ("GIT-TRANSITION", ["/space/ivho/git-transition"]),
                 ("OpenRISC", ["/space/work/openrisc",
                          "/space/ivho/openrisc"]),
+                ("Systrace", ["/space/ivho/systrace"]),
+                ("pull-request", ["/space/ivho/git/simics-pull-request"]),
+                ("arm-v8", ["/space/ivho/arm-v8"]),
+                ("scalability", ["/space/ivho/comp-editor"]),
                 ("Toshiba", ["/space/work/simics/toshiba",
                              "/space/ivho/toshiba",
                              "/space/ivho/mep"])]
@@ -159,7 +164,13 @@ class ShellActivityParser(object):
         try:
             if l.strip() == "":
                 return None
-            rev = int(l.split(":", 1)[0])
+            try:
+                rev = int(l.split(":", 1)[0])
+#            print l.split(":", 1)[0]
+            except Exception as e:
+                print "line: <%s> <%s> " % (l, l.split(":", 1)[0])
+                raise e
+
             #rev 1, rev:epoch:hostname:pwd:cmd
             if rev == 1:
                 parts = l.split(":", 5)
