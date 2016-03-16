@@ -1,21 +1,22 @@
 (custom-set-variables
-  ;; custom-set-variables was added by Custom.
-  ;; If you edit it by hand, you could mess it up, so be careful.
-  ;; Your init file should contain only one such instance.
-  ;; If there is more than one, they won't work right.
- )
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(js2-basic-offset 2))
 
 
 (add-to-list 'load-path "~/.emacs.d/")
 
+(require 'xcscope)
+
 (custom-set-faces
-  ;; custom-set-faces was added by Custom.
-  ;; If you edit it by hand, you could mess it up, so be careful.
-  ;; Your init file should contain only one such instance.
-  ;; If there is more than one, they won't work right.
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
  '(default ((t (:inherit nil :stipple nil :background "white" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 83 :width normal :foundry "unknown" :family "DejaVu Sans Mono"))))
- '(compilation-info ((((class color)) (:foreground "blue" :weight bold))))
- )
+ '(compilation-info ((((class color)) (:foreground "blue" :weight bold)))))
 ;;(load-file "quilt.el")
 
 
@@ -51,6 +52,7 @@
   (setq indent-tabs-mode t)
   (setq c-basic-offset 8))
 
+(setq show-trailing-whitespace t)
 (defun qemu-c-mode ()
   "C mode with adjusted defaults for use with qemu."
   (interactive)
@@ -130,6 +132,24 @@
       (append '(("\\.dml$" . dml-mode)
 		) auto-mode-alist))
 
+(setq indent-tabs-mode nil)
+
+(require 'sgml-mode)
+(add-hook 'html-mode-hook
+          (function
+           (lambda ()
+             (progn
+               (setq indent-tabs-mode nil)
+               (setq show-trailing-whitespace t)
+               (setq sgml-basic-offset 2)))))
+
+(add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
+(setq js2-mode-hook
+      '(lambda () (progn
+		    (set-variable 'indent-tabs-mode nil)
+		    (setq show-trailing-whitespace t)
+		    )))
+
 (setq auto-mode-alist
       (cons '("linux.*\\.c$" . linux-c-mode)
 	    auto-mode-alist))
@@ -152,6 +172,17 @@
   (setq c-indentation 4))
 
 (add-hook 'c-mode-hook 'simics-script-mode)
+
+(defun my-shell-script-mode ()
+  "shell script mode."
+  (interactive)
+  (setq tab-width 4)
+  (setq show-trailing-whitespace t)
+  (setq basic-offset 4)
+  (setq indent-tabs-mode nil)
+  (setq indentation 4))
+
+(add-hook 'shell-script-mode-hook 'my-shell-script-mode)
 
 (setq auto-mode-alist
       (cons '("\\.simics$" . simics-script-mode)
