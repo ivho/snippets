@@ -203,7 +203,7 @@ if __name__ == "__main__":
                 sys.stderr.write("--week expects an integer, \"last\" or \"current\"\nNot <%s>\n" % week)
                 sys.exit(1)
 
-        show_report(2014,
+        show_report(2016,
                     week,
                     activities = activities,
                     svnentries = svnentries,
