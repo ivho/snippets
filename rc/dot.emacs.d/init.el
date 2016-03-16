@@ -25,6 +25,21 @@
 ;; - Certain other expressions are displayed in other faces according to the
 ;;   value of the variable `font-lock-keywords'.
 
+(defun git-grepz ()
+  (shell-command "git grep apa")
+)
+
+(defun git-grepy ()
+  (interactive)
+;;  (shell-command "git rev-parse --show-toplevel")
+
+  (setq apa (shell-command-to-string "git rev-parse --git-dir"))
+  (setq default-directory apa)
+  (message apa)
+  (shell-command (concatenate 'string "git --git-dir=" apa " grep a"))
+;;  (shell-command "git --git-dirgrep printf")
+  )
+  
 
 (defun linux-c-mode ()
   "C mode with adjusted defaults for use with the Linux kernel."
@@ -85,12 +100,13 @@
 (tool-bar-mode 0)
 
 
-(load-file "/usr/share/emacs/site-lisp/xcscope.el")
-(require 'xcscope)
-(global-set-key (kbd "<f2>") 'cscope-find-this-symbol)
+;(load-file "/usr/share/emacs/site-lisp/xcscope.el")
+;(require 'xcscope)
+;(glob al-set-key (kbd "<f2>") 'cscope-find-this-symbol)
 
 
 (global-set-key [(meta return)] 'goto-line)
+(global-set-key [(meta f)] 'mark-word)
 
 
 ;;DML stuff

@@ -11,6 +11,7 @@
     ds = diff --cached --stat
     topstash = stash show -p stash@{0}
     unpushed = log --branches --not --remotes
+	create-pull-request = !sh -c 'stash pull-request $0'
 
 [core]
     excludesfile = ~/.gitignore

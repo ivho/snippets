@@ -16,8 +16,12 @@ echo "checking svn branch..."
 svn ls $urlb
 echo "branch ok"
 
+echo "add"
 git config --add svn-remote.$branch.url $urlb
+echo "config"
 git config --add svn-remote.$branch.fetch :refs/remotes/$branch
+echo "fetch"
 git svn fetch $branch
+echo "checkout"
 git checkout -b ${branch}-svn -t $branch
 #git svn rebase newbranch

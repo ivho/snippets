@@ -16,8 +16,11 @@ project_dirs = [("Totoro", ["/space/work/simics/totoro",
                          "/space/ivho/qsp"]),
                 ("NCA", ["/space/work/simics/nca",
                          "/space/ivho/nca"]),
+                ("OpenRISC", ["/space/work/openrisc",
+                         "/space/ivho/openrisc"]),
                 ("Toshiba", ["/space/work/simics/toshiba",
-                         "/space/ivho/toshiba"])]
+                             "/space/ivho/toshiba",
+                             "/space/ivho/mep"])]
 def pwd_to_proj(pwd):
     for (p, l) in project_dirs:
         for d in l:
@@ -65,7 +68,7 @@ class Activity():
     def __repr__(self):
         return "%0.2fh %s -> %s (%d entries)" % (
             self.length()/3600.,
-            self.start.strftime("%H:%M"),
+            self.start.strftime("%D:%M %H:%M"),
             self.end.strftime("%H:%M"),
             len(self.entries))
 

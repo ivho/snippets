@@ -20,6 +20,8 @@ def get_days_in_week(year, week):
 def date_str(date):
     return date.strftime("%F")
 
+def shortdate(date):
+    return date.strftime("%a in week %V")
 
 def show_report(year, week, activities, svnentries, verbose, gitcommits):
     print "WEEK %d" % week
@@ -29,7 +31,7 @@ def show_report(year, week, activities, svnentries, verbose, gitcommits):
         print " == %s" % d.strftime("%a %b %d")
         entries = [e for e in svnentries if date_str(e.date) == date_str(d)]
         if entries:
-            print "  SVN:"
+            print "  ->SVN: %s" % shortdate(d)
             for e in entries:
                 print "   %s r%d <%s>" % (e.date.strftime("%H:%M:%S"), e.rev, e.msg)
                 if verbose > 1:
@@ -39,29 +41,33 @@ def show_report(year, week, activities, svnentries, verbose, gitcommits):
                     else:
                         print "       (merge?)"
         else:
-            print "  SVN: None"
+            print "  ->SVN: None"
 
         commits = [e for e in gitcommits
                    if date_str(e.adate) == date_str(d)]
         commits.sort(key = lambda a:a.adate)
         if len(commits) != 0:
-            print "  GIT:"
+            print "  ->GIT: (%s)" % shortdate(d)
             for commit in commits:
-                print "   %s %s <%s>" % (commit.adate.strftime("%H:%M:%S"),
+                if commit.author.startswith("ivar"):
+                    print "   %s %s %s <%s>" % (commit.adate.strftime("%H:%M:%S"),
+                                                commit.author,
                                                 commit.sha[:8],
                                                 commit.msg.strip())
-                if verbose > 1:
-                    for f in commit.get_files():
-                        print "     - ", f
+                    if verbose > 1:
+                        for f in commit.get_files():
+                            print "     - ", f
         else:
-            print "  GIT: None"
+            print "  ->GIT: None"
 
         sumact = 0
         if len(activities) != 0:
-            print "  SHELL:"
+            print "  ->SHELL: %s" % shortdate(d)
         else:
-            print "  SHELL: None"
+            print "  ->SHELL: None"
         for (i, a) in enumerate(activities):
+#            print "%s  - %s" % (date_str(d), date_str(a.start))
+
             if date_str(d) == date_str(a.start):
                 if i+1 < len(activities):
                     br = "break %0.2fh" % (a.time_between(activities[i+1])/3600.)
@@ -172,7 +178,11 @@ if __name__ == "__main__":
 #        report_parser.ShellActivityParser.convert_old(args.psfile)
 #        sys.exit(0)
 #        proj_act = report_parser.get_project_activities(entries, )
+#        print psfile
     activities = psact.get_activities()
+#    print activities
+#    for a in activities:
+#        print a
 
     commits = []
     for gitdir in args.gitdirs:
@@ -193,7 +203,7 @@ if __name__ == "__main__":
                 sys.stderr.write("--week expects an integer, \"last\" or \"current\"\nNot <%s>\n" % week)
                 sys.exit(1)
 
-        show_report(2013,
+        show_report(2014,
                     week,
                     activities = activities,
                     svnentries = svnentries,

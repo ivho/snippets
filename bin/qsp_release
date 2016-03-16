@@ -14,12 +14,15 @@ mkdir -p $tmpdir
 if [ $(hostname) == "nobu" ] ; then
    builddir=/space/work/simics/qsp/release_build/
    simics_install=/space/work/simics/qsp/install/simics-4.6.39
+elif [ $(hostname) == "nobu2" ] ; then
+   builddir=/space/ivho/qsp/release_build/
+   simics_install=/space/ivho/install48/simics-4.8.38
 else
    builddir=/opt/$USER/qsp/release
    simics_install=/opt/iholmqvi/qsp/install2/simics-4.6.58
 fi
 
-SVN_BRANCH=4.6_swe-wri9722
+SVN_BRANCH=4.8
 SVN_BASE=http://ala-svn.wrs.com/svn/Simics/simics/branches
 if [ -z $DONT_VALIDATE_MYSELF ]; then
     svn cat $SVN_BASE/$SVN_BRANCH/scripts/qsp/create_qsp_release.sh > $tmpdir/create_qsp_release.sh
@@ -28,7 +31,7 @@ else
     echo " press <return> to acknowledge that this should be be used to build proper images."
     echo " this mode is intended for debugging the create_qsp_release.sh script only."
     read
-    cp /opt/iholmqvi/Simics/scripts/qsp/create_qsp_release.sh $tmpdir/create_qsp_release.sh
+    cp /space/ivho/svn/4.8/scripts/qsp/create_qsp_release.sh $tmpdir/create_qsp_release.sh
 fi
 chmod 755 $tmpdir/create_qsp_release.sh
 

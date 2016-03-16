@@ -64,7 +64,8 @@ class GitActivity(object):
                                   ).strip()
 
         o = git_cmd(gitdir, "log", self.gitall +
-                    ["--format=format:%ct:%at:%H:%ae:%s"])
+                    ["--after=2013-06-06",
+                     "--format=format:%ct:%at:%H:%ae:%s"])
         for l in o.split("\n"):
             (ct,at,sha,author,msg) = l.split(":", 4)
             ge = GitCommit(sha = sha,
