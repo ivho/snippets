@@ -2,7 +2,7 @@
 	ui = auto
 [user]
 	name = Ivar Holmqvist
-	email = ivarholmqvist@gmail.com
+	email = ivar.holmqvist@windriver.com
 
 [alias]
     lol = log --graph --decorate --pretty=oneline --abbrev-commit
@@ -10,8 +10,8 @@
     dc = diff --cached
     ds = diff --cached --stat
     topstash = stash show -p stash@{0}
-    unpushed = log --branches --not --remotes
-	create-pull-request = !sh -c 'stash pull-request $0'
+    create-pull-request = !sh -c 'stash pull-request $0'
+    branchdate = for-each-ref --sort=-committerdate refs/remotes/ --format="%(authordate:short)%09%(objectname:short)%09%1B[0;33m%(refname:short)%1B[m%09%(authorname)%09"
 
 [core]
     excludesfile = ~/.gitignore
