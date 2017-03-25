@@ -1,0 +1,4 @@
+#!/bin/sh
+
+cb=$(git branch | grep '^*' |sed s/\*\ //)
+git log $* hpc/dev..$cb
