@@ -25,6 +25,8 @@ floating_modifier $mod
 
 exec nm-applet
 exec gnome-sound-applet
+exec --no-startup-id /usr/lib/gnome-settings-daemon/gnome-settings-daemon
+exec xautolock -time 30 -locker i3lock
 
 # start a terminal
 bindsym $mod+Return exec "gnome-terminal --hide-menubar"
@@ -159,6 +161,9 @@ bar {
 }
 
 #bindsym Super_L+1 move workspace to output HDMI1
-bindsym $mod+p move workspace to output eDP1
-bindsym $mod+o move workspace to output HDMI1
+bindsym $mod+p move workspace to output VGA-1
+bindsym $mod+o move workspace to output VGA-2
 
+assign [class="Google-chrome"] 5
+
+bindsym Control+mod1+l exec i3lock

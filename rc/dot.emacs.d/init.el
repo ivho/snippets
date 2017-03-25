@@ -1,3 +1,9 @@
+
+(setq backup-directory-alist
+      `((".*" . ,temporary-file-directory)))
+(setq auto-save-file-name-transforms
+      `((".*" ,temporary-file-directory t)))
+
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -5,19 +11,16 @@
  ;; If there is more than one, they won't work right.
  '(js2-basic-offset 2))
 
+(defun tf-toggle-show-trailing-whitespace ()
+  "Toggle show-trailing-whitespace between t and nil"
+  (interactive)
+  (setq show-trailing-whitespace (not show-trailing-whitespace)))
 
-(add-to-list 'load-path "~/.emacs.d/")
 
-(require 'xcscope)
+;;(add-to-list 'load-path "~/.emacs.d/")
 
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(default ((t (:inherit nil :stipple nil :background "white" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 83 :width normal :foundry "unknown" :family "DejaVu Sans Mono"))))
- '(compilation-info ((((class color)) (:foreground "blue" :weight bold)))))
-;;(load-file "quilt.el")
+;;(require 'xcscope)
+
 
 
 
@@ -99,7 +102,7 @@
 ;;(load-file "/home/ivho/simics42/simics-model-builder-4.2.21/scripts/dml-mode.el")
 ;;(require 'ipython)
 (menu-bar-mode 0)
-(tool-bar-mode 0)
+;;(tool-bar-mode 0)
 
 
 ;(load-file "/usr/share/emacs/site-lisp/xcscope.el")
