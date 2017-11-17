@@ -1,28 +1,113 @@
 
+(require 'package)
+(add-to-list 'package-archives
+             '("melpa" . "https://melpa.org/packages/") t)
+(when (< emacs-major-version 24)
+  ;; For important compatibility libraries like cl-lib
+  (add-to-list 'package-archives '("gnu" . "https://elpa.gnu.org/packages/")))
+(package-initialize)
+
+(require 'whitespace)
+
 (setq backup-directory-alist
       `((".*" . ,temporary-file-directory)))
 (setq auto-save-file-name-transforms
       `((".*" ,temporary-file-directory t)))
+(defun tf-toggle-show-trailing-whitespace ()
+  "Toggle show-trailing-whitespace between t and nil"
+  (interactive)
+  (setq show-trailing-whitespace (not show-trailing-whitespace)))
+
+(add-to-list 'load-path "~/.emacs.d/lisp")
+(require 'stgit)
+
+
+
+    (defun setup-tide-mode ()
+      (interactive)
+       (tide-setup)
+       (flycheck-add-next-checker 'typescript-tide '(t . typescript-tslint) 'append)
+       (eldoc-mode +1)
+       (company-mode +1)
+       (tide-hl-identifier-mode +1))
+
+    ;; aligns annotation to the right hand side
+    (setq company-tooltip-align-annotations t)
+
+    ;; formats the buffer before saving
+;;    (add-hook 'before-save-hook 'tide-format-before-save)
+    (add-hook 'typescript-mode-hook #'setup-tide-mode)
+
+    (add-to-list 'auto-mode-alist '("\\.tsx\\'" . web-mode))
+    (add-hook 'typescript-mode-hook
+	      (lambda ()
+		(when (string-equal "tsx" (file-name-extension buffer-file-name))
+		  (setup-tide-mode))))
+
+(setq tide-format-options
+      '(:indentSize 1))
+
+    ;; funky typescript linting in web-mode
+;;    (flycheck-add-mode 'typescript-tslint 'web-mode)
+
+
+
+;; formats the buffer before saving
+;(add-hook 'before-save-hook 'tide-format-before-save)
+
+;(add-hook 'typescript-mode-hook #'setup-tide-mode)
+
+;(auto-install-from-url "https://raw.github.com/aki2o/emacs-tss/master/tss.el")
+;(auto-install-from-url "https://raw.github.com/aki2o/emacs-tss/master/typescript.el")
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(js2-basic-offset 2))
+ '(js2-basic-offset 2)
+ '(package-selected-packages
+   (quote
+    (tide json-mode js2-mode flymake-cursor editorconfig company-web company-c-headers)))
+ '(typescript-indent-level 2))
 
 (defun tf-toggle-show-trailing-whitespace ()
   "Toggle show-trailing-whitespace between t and nil"
   (interactive)
   (setq show-trailing-whitespace (not show-trailing-whitespace)))
 
+;; aptitude install pyflakes to check python code
+(require 'flymake-cursor)
+(global-set-key [f4] 'flymake-goto-next-error)
 
-;;(add-to-list 'load-path "~/.emacs.d/")
+(when (load "flymake" t)
+  (defun flymake-pyflakes-init ()
+    (let* ((temp-file (flymake-init-create-temp-buffer-copy
+                       'flymake-create-temp-inplace))
+           (local-file (file-relative-name
+                        temp-file
+                        (file-name-directory buffer-file-name))))
+      (list "pyflakes" (list local-file))))
+
+  (add-to-list 'flymake-allowed-file-name-masks
+               '("create-app\\'\\.py\\'" flymake-pyflakes-init)))
+
+(add-hook 'find-file-hook 'flymake-find-file-hook)
+
 
 ;;(require 'xcscope)
+(require 'nginx-mode)
+(require 'yaml-mode)
+(add-to-list 'auto-mode-alist '("\\.yaml\\'" . yaml-mode))
+(add-hook 'yaml-mode-hook
+          '(lambda ()
+             (define-key yaml-mode-map "\C-m" 'newline-and-indent)))
 
 
-
+(defun tf-toggle-show-trailing-whitespace ()
+  "Toggle show-trailing-whitespace between t and nil"
+  (interactive)
+  (setq show-trailing-whitespace (not show-trailing-whitespace)))
 
 ;;- Comments are displayed in `font-lock-comment-face'
 ;; - Strings are displayed in `font-lock-string-face';
@@ -107,16 +192,43 @@
 
 ;(load-file "/usr/share/emacs/site-lisp/xcscope.el")
 ;(require 'xcscope)
-;(glob al-set-key (kbd "<f2>") 'cscope-find-this-symbol)
+;(global-set-key (kbd "<f2>") 'cscope-find-this-symbol)
 
 
 (global-set-key [(meta return)] 'goto-line)
-(global-set-key [(meta f)] 'mark-word)
+
+(defun my-mark-current-word (&optional arg allow-extend)
+    "Put point at beginning of current word, set mark at end."
+    (interactive "p\np")
+    (setq arg (if arg arg 1))
+    (if (and allow-extend
+             (or (and (eq last-command this-command) (mark t))
+                 (region-active-p)))
+        (set-mark
+         (save-excursion
+           (when (< (mark) (point))
+             (setq arg (- arg)))
+           (goto-char (mark))
+           (forward-word arg)
+           (point)))
+      (let ((wbounds (bounds-of-thing-at-point 'word)))
+        (unless (consp wbounds)
+          (error "No word at point"))
+        (if (>= arg 0)
+            (goto-char (car wbounds))
+          (goto-char (cdr wbounds)))
+        (push-mark (save-excursion
+                     (forward-word arg)
+                     (point)))
+        (activate-mark))))
+
+(global-set-key (kbd "<f12>") 'next-match)
+(global-set-key (kbd "<f10>") 'my-mark-current-word)
 
 
 ;;DML stuff
 ;;(setq load-path (cons "~/.emacs.d/vt-elisp" load-path))
-(add-to-list 'load-path "~/.emacs.d/vt-elisp/")
+(add-to-list 'load-path "/home/packages/vt-elisp")
 
 (load "vt-elisp-start")
 (add-hook 'dml-mode-hook
@@ -152,7 +264,7 @@
 		    (set-variable 'indent-tabs-mode nil)
 		    (setq show-trailing-whitespace t)
 		    )))
-
+(set-variable 'indent-tabs-mode nil)
 (setq auto-mode-alist
       (cons '("linux.*\\.c$" . linux-c-mode)
 	    auto-mode-alist))
@@ -203,3 +315,73 @@
 (add-to-list 'auto-mode-alist '("\\.scad$" . scad-mode))
 
 (put 'upcase-region 'disabled nil)
+
+
+(defun my-mark-current-word (&optional arg allow-extend)
+    "Put point at beginning of current word, set mark at end."
+    (interactive "p\np")
+    (setq arg (if arg arg 1))
+    (if (and allow-extend
+             (or (and (eq last-command this-command) (mark t))
+                 (region-active-p)))
+        (set-mark
+         (save-excursion
+           (when (< (mark) (point))
+             (setq arg (- arg)))
+           (goto-char (mark))
+           (forward-word arg)
+           (point)))
+      (let ((wbounds (bounds-of-thing-at-point 'word)))
+        (unless (consp wbounds)
+          (error "No word at point"))
+        (if (>= arg 0)
+            (goto-char (car wbounds))
+          (goto-char (cdr wbounds)))
+        (push-mark (save-excursion
+                     (forward-word arg)
+                     (point)))
+        (activate-mark))))
+
+(defun get-point (symbol &optional arg)
+      "get the point"
+      (funcall symbol arg)
+      (point)
+     )
+
+(defun copy-thing (begin-of-thing end-of-thing &optional arg)
+  "copy thing between beg & end into kill ring"
+  (save-excursion
+    (let ((beg (get-point begin-of-thing 1))
+          (end (get-point end-of-thing arg)))
+      (copy-region-as-kill beg end)))
+  )
+
+(defun paste-to-mark(&optional arg)
+  "Paste things to mark, or to the prompt in shell-mode"
+  (let ((pasteMe 
+     	 (lambda()
+     	   (if (string= "shell-mode" major-mode)
+               (progn (comint-next-prompt 25535) (yank))
+             (progn (goto-char (mark)) (yank) )))))
+    (if arg
+        (if (= arg 1)
+            nil
+          (funcall pasteMe))
+      (funcall pasteMe))
+    ))
+
+(defun copy-word (&optional arg)
+      "Copy words at point into kill-ring"
+       (interactive "P")
+       (copy-thing 'backward-word 'forward-word arg)
+       ;;(paste-to-mark arg)
+       )
+;;(global-set-key [(ctrl return)] 'copy-word)
+;;(global-set-key [(control p)] 'copy-word)
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(company-tooltip ((t (:foreground "yellow"))))
+ '(minibuffer-prompt ((t (:foreground "green")))))
