@@ -12,7 +12,7 @@
     topstash = stash show -p stash@{0}
     create-pull-request = !sh -c 'stash pull-request $0'
     branchdate = for-each-ref --sort=-committerdate refs/remotes/ --format="%(authordate:short)%09%(objectname:short)%09%1B[0;33m%(refname:short)%1B[m%09%(authorname)%09"
-    review = log --format='format:http://stash.wrs.com/projects/SIM/repos/simics-lyra/commits/%h %s'
+    review = log --format='format:https://stash-intel.windriver.com/projects/SIM/repos/simics-scalability-tools/commits/%h %s'
 
 [core]
     excludesfile = ~/.gitignore
