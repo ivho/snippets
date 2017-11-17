@@ -159,11 +159,23 @@ bindsym $mod+r mode "resize"
 bar {
         status_command i3status
 }
-
+#DVI-I-1
+#DP-1
 #bindsym Super_L+1 move workspace to output HDMI1
-bindsym $mod+p move workspace to output VGA-1
-bindsym $mod+o move workspace to output VGA-2
+bindsym $mod+o move workspace to output DP-1
+bindsym $mod+p move workspace to output DVI-I-1
 
-assign [class="Google-chrome"] 5
+for_window [class="Google-chrome-unstable"] move container to workspace 5
 
 bindsym Control+mod1+l exec i3lock
+bindsym $mod+Shift+d exec xfce4-screenshooter
+
+
+#bindsym $mod+p move workspace to output VGA-1
+#bindsym $mod+o move workspace to output VGA-2
+
+#assign [class="Google-chrome"] 5
+
+#bindsym Control+mod1+l exec i3lock
+
+
