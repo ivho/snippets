@@ -94,6 +94,13 @@
 
 (add-hook 'find-file-hook 'flymake-find-file-hook)
 
+;;(add-to-list 'load-path "~/.emacs.d/")1
+(add-to-list 'load-path "~/.emacs.d/tools")
+;;(require 'xcscope)
+;;(load-file "yaml-mode.el")
+(require 'yaml-mode)
+  (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-mode))
+  (add-to-list 'auto-mode-alist '("\\.yaml\\'" . yaml-mode))
 
 ;;(require 'xcscope)
 (require 'nginx-mode)
