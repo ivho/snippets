@@ -1,0 +1,70 @@
+#!/usr/bin/python
+#
+# Control console through tmux
+#
+# Derived from jani.nurminen@windriver.com Echelon v2
+#
+# Pipe your tmux serial log to this with script, to get the computer to do the
+# hard work.
+#
+# In tmux:
+#     pipe-pane "exec ~/bin/safenetboot <u-boot-prompt> #D"
+# Example:
+#   Enable:
+#     pipe-pane "exec ~/bin/safenetboot #D 'air6488>'"
+#   Disable
+#     pipe-pane
+#
+
+import sys
+import os
+from pexpect import fdpexpect
+
+if len(sys.argv) == 3:
+    pane_id = sys.argv[1]
+    prompt = sys.argv[2]
+elif len(sys.argv) == 2:
+    pane_id = sys.argv[1]
+else:
+    print("Syntax: %s #D <prompt>" % sys.argv[0])
+    sys.exit(1)
+
+p = None
+
+def tmux_cmd(msg):
+    # print("Invoking %s" % msg)
+    # os.system("tmux display-message \"%s\"" % msg)
+    os.system("tmux send-keys -t %s \"%s\"" % (pane_id, msg))
+
+def wrapped_send(s):
+    # hotpatch the pexpect send routine so that all sends end up in tmux
+    global p
+    s = p._coerce_send_string(s)
+    b = p._encoder.encode(s, final=False)
+    return tmux_cmd(b)
+
+action_table = {
+        "foobar" : "tralala",
+        "baz" : "blah"
+    }
+
+print("Listening for keywords for pane %s..." % pane_id)
+
+p = fdpexpect.fdspawn(sys.stdin)
+# hotpatch
+p.send = wrapped_send
+
+prompt="air6488"
+
+while True:
+    p.expect("Hit any key to stop autoboot");
+    p.sendline("");
+    p.expect("air6488>");
+    p.sendline("setenv tftp_lmc_path air6488-2/qmarfre/app.xlf")
+    p.expect("air6488");
+    p.sendline("setenv sbb_validate true");
+    p.expect("air6488");
+    p.sendline("run safenet")
+
+p.close()
+print("Quitting")
