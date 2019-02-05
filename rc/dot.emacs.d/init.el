@@ -1,13 +1,36 @@
-
+(require 'etags)
 (require 'package)
+;;(add-to-list 'package-archives
+;;            '("melpa" . "https://melpa.org/packages/") t)
 (add-to-list 'package-archives
-             '("melpa" . "https://melpa.org/packages/") t)
+             '("melpa-stable" . "http://melpa-stable.milkbox.net/packages/") t)
+
 (when (< emacs-major-version 24)
   ;; For important compatibility libraries like cl-lib
   (add-to-list 'package-archives '("gnu" . "https://elpa.gnu.org/packages/")))
+
+(setq package-list
+      '(python-environment flymake ))
+	;; deferred epc
+	;; 		   flycheck ctable jedi concurrent company cyberpunk-theme elpy
+	;; 		   yasnippet pyvenv highlight-indentation find-file-in-project
+	;; 		   sql-indent sql exec-path-from-shell iedit
+	;; 		   auto-complete popup let-alist git-rebase-mode
+	;; 		   git-commit-mode minimap popup))
+
+
 (package-initialize)
 
+					; fetch the list of packages available
+(unless package-archive-contents
+  (package-refresh-contents))
+
+					; install the missing packages
+(dolist (package package-list)
+  (unless (package-installed-p package)
+        (package-install package)))
 (require 'whitespace)
+
 
 (setq backup-directory-alist
       `((".*" . ,temporary-file-directory)))
@@ -19,7 +42,7 @@
   (setq show-trailing-whitespace (not show-trailing-whitespace)))
 
 (add-to-list 'load-path "~/.emacs.d/lisp")
-(require 'stgit)
+;;(require 'stgit)
 
 
 
@@ -68,7 +91,7 @@
  '(js2-basic-offset 2)
  '(package-selected-packages
    (quote
-    (tide json-mode js2-mode flymake-cursor editorconfig company-web company-c-headers)))
+    (tide json-mode js2-mode editorconfig company-web company-c-headers)))
  '(typescript-indent-level 2))
 
 (defun tf-toggle-show-trailing-whitespace ()
@@ -77,34 +100,55 @@
   (setq show-trailing-whitespace (not show-trailing-whitespace)))
 
 ;; aptitude install pyflakes to check python code
-(require 'flymake-cursor)
-(global-set-key [f4] 'flymake-goto-next-error)
+;;(require 'flymake-cursor)
+;;(global-set-key [f4] 'flymake-goto-next-error)
 
-(when (load "flymake" t)
-  (defun flymake-pyflakes-init ()
-    (let* ((temp-file (flymake-init-create-temp-buffer-copy
+ (when (load "flymake" t)
+   (defun flymake-pyflakes-init ()
+     (let* ((temp-file (flymake-init-create-temp-buffer-copy
                        'flymake-create-temp-inplace))
            (local-file (file-relative-name
                         temp-file
                         (file-name-directory buffer-file-name))))
       (list "pyflakes" (list local-file))))
+  
+   (add-to-list 'flymake-allowed-file-name-masks
+ 		'("create-app\\'\\.py\\'" flymake-pyflakes-init)))
 
-  (add-to-list 'flymake-allowed-file-name-masks
-               '("create-app\\'\\.py\\'" flymake-pyflakes-init)))
+;; (add-hook 'find-file-hook 'flymake-find-file-hook)
 
-(add-hook 'find-file-hook 'flymake-find-file-hook)
+;; Build a custom command-line using flymake.mk
+(defun flymake-get-kernel-make-cmdline (source base-dir)
+  (list "make"
+	(list "-s"
+	      "-f"
+	      "flymake.mk"
+	      "-C"
+	      base-dir
+	      (concat "CHK_SOURCES=" source)
+	      "SYNTAX_CHECK_MODE=1"
+	      "check-syntax")))
+
+;; Search for flymake.mk to locate kernel tree base
+(defun flymake-kernel-make-init ()
+  (flymake-simple-make-init-impl 'flymake-create-temp-inplace t t "flymake.mk" 'flymake-get-kernel-make-cmdline))
+
+;; Register against .c files under /linux/ or /kernel/
+;; Since the list is parsed in order use `push`
+(push '(".+/\\(linux\\|kernel\\)/.+\\.c$" flymake-kernel-make-init) flymake-allowed-file-name-masks)
+
 
 ;;(add-to-list 'load-path "~/.emacs.d/")1
 (add-to-list 'load-path "~/.emacs.d/tools")
 ;;(require 'xcscope)
 ;;(load-file "yaml-mode.el")
-(require 'yaml-mode)
+;;(require 'yaml-mode)
   (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-mode))
   (add-to-list 'auto-mode-alist '("\\.yaml\\'" . yaml-mode))
 
 ;;(require 'xcscope)
-(require 'nginx-mode)
-(require 'yaml-mode)
+;;(require 'nginx-mode)
+;;(require 'yaml-mode)
 (add-to-list 'auto-mode-alist '("\\.yaml\\'" . yaml-mode))
 (add-hook 'yaml-mode-hook
           '(lambda ()
@@ -135,12 +179,15 @@
   (shell-command (concatenate 'string "git --git-dir=" apa " grep a"))
 ;;  (shell-command "git --git-dirgrep printf")
   )
-  
+(setq ggtags-executable-directory "/usr/bin")
+
+;;(require 'column-marker)
 
 (defun linux-c-mode ()
   "C mode with adjusted defaults for use with the Linux kernel."
   (interactive)
   (c-mode)
+  (column-enforce-mode)
   (c-set-style "K&R")
   (setq tab-width 8)
   (setq show-trailing-whitespace t)
@@ -185,6 +232,10 @@
   (setq show-trailing-whitespace t)
   (setq indent-tabs-mode nil)
   (setq c-basic-offset 4))
+
+
+(add-to-list 'load-path "/home/eholiva/.emacs.d/local")
+
 
 ;;(add-to-list 'load-path "/usr/share/doc/git-core/contrib/emacs/")
 
@@ -235,9 +286,9 @@
 
 ;;DML stuff
 ;;(setq load-path (cons "~/.emacs.d/vt-elisp" load-path))
-(add-to-list 'load-path "/home/packages/vt-elisp")
+;;(add-to-list 'load-path "/home/packages/vt-elisp")
 
-(load "vt-elisp-start")
+;;(load "vt-elisp-start")
 (add-hook 'dml-mode-hook
   (function (lambda ()
               (setq show-trailing-whitespace t))))
@@ -273,7 +324,7 @@
 		    )))
 (set-variable 'indent-tabs-mode nil)
 (setq auto-mode-alist
-      (cons '("linux.*\\.c$" . linux-c-mode)
+      (cons '(".*\\.[ch]$" . linux-c-mode)
 	    auto-mode-alist))
 
 (setq auto-mode-alist
