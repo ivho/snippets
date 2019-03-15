@@ -101,5 +101,6 @@ if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
 fi
 
 export PATH=$PATH:$HOME/bin
+export PATH=/repo3/eholiva/emacs/bin:$PATH
 
 echo export DISPLAY=$DISPLAY > ~/last_display
