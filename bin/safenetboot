@@ -22,7 +22,7 @@ from pexpect import fdpexpect
 
 if len(sys.argv) == 3:
     pane_id = sys.argv[1]
-    prompt = sys.argv[2]
+    commands = sys.argv[2]
 elif len(sys.argv) == 2:
     pane_id = sys.argv[1]
 else:
@@ -32,16 +32,25 @@ else:
 p = None
 
 def tmux_cmd(msg):
-    # print("Invoking %s" % msg)
+    #print("Invoking %s" % msg)
     # os.system("tmux display-message \"%s\"" % msg)
-    os.system("tmux send-keys -t %s \"%s\"" % (pane_id, msg))
+    for m in msg:
+        if m == '\n':
+            m = "Enter"
+        if m == ';':
+            m = '\;'
+        if m == '\"':
+            m = '\\"'
+        cmd = "tmux send-keys -t %s \"%s\"" % (pane_id, m)
+        print cmd
+        os.system(cmd)
 
 def wrapped_send(s):
     # hotpatch the pexpect send routine so that all sends end up in tmux
     global p
     s = p._coerce_send_string(s)
     b = p._encoder.encode(s, final=False)
-    return tmux_cmd(b)
+    return tmux_cmd(s)
 
 action_table = {
         "foobar" : "tralala",
@@ -54,17 +63,84 @@ p = fdpexpect.fdspawn(sys.stdin)
 # hotpatch
 p.send = wrapped_send
 
-prompt="air6488"
+#prompt="air3246>"
+prompt="air6488>"
 
+
+# KRD
+# setenv boot_lmc 'if run sbb_validate; then run hw_init; run set_mtd_size ; run add_app_bootargs; echo "Boot Linux..."; dhcp ; tftpboot ${kernel_start} AIR3246-2/eholiva/6488/uImage ; bootm ${kernel_start} ${rootfs_start} ${dtb_start}; fi ; reset'
+# tftpboot uImage + dtb
+uboot_cmds = {
+    "safenet": [
+        "setenv tftp_lmc_path AIR3246-2/eholiva/lmc.xlf",
+        "setenv tftp_uimage_path AIR3246-2/eholiva/uImage",
+        "setenv dtb_path AIR3246-2/eholiva/air3246-all-uio.dtb",
+        "setenv boot_lmc 'run hw_init; run add_app_bootargs; echo \"Boot Linux...\"; tftpboot ${dtb_start} ${dtb_path} ; tftpboot ${kernel_start} ${tftp_uimage_path}; setenv bootargs ${bootargs} ; bootm ${kernel_start} ${rootfs_start} ${dtb_start}'",
+        "run safenet",
+    ],
+    "lmc2-air6488": [
+        #tftpboot ${dtb_start} ${dtb_path} ;  tftpboot ${kernel_start} ${tftp_uimage_path}
+        "setenv tftp_uimage_path AIR3246-2/eholiva/6488/uImage",
+        "setenv dtb_path %(tftp_path)s/air6488-applic.dtb",
+        "setenv load_uimage tftpboot ${kernel_start} %(tftp_path)s/uImage",
+#        "setenv load_dtb tftpboot ${dtb_start} %(tftp_path)s/air6488-applic.dtb",
+        "setenv load_dtb tftpboot ${dtb_start} AIR3246-2/eholiva/6488/air6488-applic.dtb",
+        #"setenv sys_hw_profile air6488",
+        "setenv sys_hw_profile air6488_standalone",
+        "setenv custom_bootargs uio_pdrv_genirq.iocatch_default=y",
+        #"setenv custom_bootargs iocatch_early_range=0x0000000080000000:0x10000000",
+        "setenv boot_lmc 'if run sbb_validate; then run hw_init; run set_mtd_size ; run add_app_bootargs; setenv bootargs ${bootargs} ${custom_bootargs} ; echo \"Boot Linux...\"; dhcp ; tftpboot ${kernel_start} AIR3246-2/eholiva/6488/uImage ; tftpboot ${dtb_start} AIR3246-2/eholiva/6488/air6488-standalone-iocatch.dtb ; bootm ${kernel_start} ${rootfs_start} ${dtb_start}; fi ; reset'",
+        #"setenv boot_lmc 'if run sbb_validate; then run hw_init; run set_mtd_size ; run add_app_bootargs; echo \"Boot Linux...\"; dhcp ; tftpboot ${kernel_start} AIR3246-2/eholiva/6488/uImage ; bootm ${kernel_start} ${rootfs_start} ${dtb_start}; fi ; reset'",
+        #"setenv boot_lmc 'if run sbb_validate; then run hw_init; run set_mtd_size ; run add_app_bootargs; echo \"Boot Linux...\"; dhcp ; echo kernel: ${kernel_start} ${rootfs_start} ${dtb_start}; bootm ${kernel_start} ${rootfs_start} ${dtb_start}; fi ; reset'",
+        "run safemode",
+        #"run lmc1",
+    ],
+    "lmc2": [
+        "setenv tftp_lmc_path AIR3246-2/eholiva/lmc.xlf",
+        "setenv tftp_uimage_path AIR3246-2/eholiva/uImage",
+         "setenv dtb_path AIR3246-2/eholiva/6488/air3246-lmc2-dev.dtb",
+        #"setenv boot_lmc 'run hw_init; run add_app_bootargs; echo \"Boot Linux...\" ;tftpboot ${kernel_start} ${tftp_uimage_path}; bootm ${kernel_start} ${rootfs_start} ${dtb_start}'",
+        "setenv boot_lmc 'run hw_init; run add_app_bootargs; echo \"Boot Linux...\"; tftpboot ${dtb_start} ${dtb_path} ;tftpboot ${kernel_start} ${tftp_uimage_path}; bootm ${kernel_start} ${rootfs_start} ${dtb_start}'",
+        "dhcp; run lmc2",
+    ]
+    }
+
+subst = {
+    "lmc2-air6488": {
+        "tftp_path":"AIR3246-2/eholiva/6488"
+    }
+}
+
+#p0x0000000080000000
+#0x00000000e0000000:0xfffffffff0000000
+#p.sendline(uboot_cmds[3])
+if pane_id == "zz":
+    for cmd in uboot_cmds:
+        p.sendline(cmd)
+    sys.exit(1)
+
+if commands not in uboot_cmds:
+    os.system("tmux display-message %s" % commands)
 while True:
-    p.expect("Hit any key to stop autoboot");
-    p.sendline("");
-    p.expect("air6488>");
-    p.sendline("setenv tftp_lmc_path air6488-2/qmarfre/app.xlf")
-    p.expect("air6488");
-    p.sendline("setenv sbb_validate true");
-    p.expect("air6488");
-    p.sendline("run safenet")
+    p.expect("Hit any key to stop autoboot:", timeout = 99999999)
+    p.sendline("\n#%s" % commands);
 
-p.close()
-print("Quitting")
+#    try:
+#        p.sendline("\n#%s - prompt %s (%d)\n" % (commands, prompt, len(uboot_commands[commands])xs));
+#    except:
+#        p.sendline("# exception\n")
+    for cmd in uboot_cmds[commands]:
+        if cmd == None:
+            os.system("tmux display-message waiting")
+            p.expect(prompt, timeout = 1000)
+        if commands in subst:
+            p.sendline(cmd % subst[commands])
+        else:
+            p.sendline("sjsjsjs")
+            #        else:
+#        p.sendline(cmd)
+        first = False
+
+
+#p.close()
+#print("Quitting")
