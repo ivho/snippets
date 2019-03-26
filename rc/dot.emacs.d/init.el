@@ -187,7 +187,8 @@
   "C mode with adjusted defaults for use with the Linux kernel."
   (interactive)
   (c-mode)
-  (column-enforce-mode)
+  (ggtags-mode)
+;;  (column-enforce-mode)
   (c-set-style "K&R")
   (setq tab-width 8)
   (setq show-trailing-whitespace t)

@@ -2,7 +2,7 @@
 	ui = auto
 [user]
 	name = Ivar Holmqvist
-	email = ivar.holmqvist@no-bull.se
+	email = ivar.holmqvist@windriver.com
 
 [alias]
     lol = log --graph --decorate --pretty=oneline --abbrev-commit
